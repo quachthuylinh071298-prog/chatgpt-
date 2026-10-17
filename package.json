@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "setup": "node scripts/setup.mjs",
-    "format": "prettier --write app lib tests scripts docs *.json *.ts *.mjs README.md .github"
+    "format": "prettier --write app lib tests scripts docs *.json *.ts *.mjs README.md .github",
+    "browser": "node scripts/codespaces-start.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

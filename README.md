@@ -4,6 +4,18 @@ MVP dashboard tiếng Việt cho quản lý dự án và phân tích Marketing y
 
 ![Dashboard MedIntel](docs/images/dashboard.png)
 
+## Mở trực tiếp trong trình duyệt, không cài trên máy
+
+[**Mở MedIntel bằng GitHub Codespaces**](https://codespaces.new/quachthuylinh071298-prog/chatgpt-?ref=feat%2Fmedical-marketing-mvp)
+
+1. Đăng nhập GitHub, giữ nhánh `feat/medical-marketing-mvp`, bấm **Create codespace** nếu tài khoản còn hạn mức phù hợp. GitHub quản lý hạn mức/chi phí; repository không tự tạo môi trường hay dịch vụ trả phí.
+2. Chờ cài đặt và build lần đầu. Website cùng worker sẽ tự khởi động; trình duyệt có thể tự mở ứng dụng.
+3. Nếu chưa mở: chọn tab **PORTS** phía dưới, tìm cổng **3000**, bấm biểu tượng quả địa cầu **Open in Browser**. Giữ chế độ cổng **Private**.
+4. Trong danh sách file bên trái, mở `.env.local`. Mật khẩu đăng nhập là phần sau `APP_PASSWORD=`. Không chia sẻ file hoặc dòng `SESSION_SECRET`.
+5. Dừng Codespaces khi dùng xong. Dữ liệu chỉ còn khi workspace còn tồn tại; sao lưu trước khi xóa Codespaces.
+
+**Đây là môi trường xem trước theo yêu cầu, chưa phải website trực tuyến chạy liên tục.** Link `http://localhost:3000` trong mục bên dưới chỉ dùng khi bạn chạy ứng dụng trên chính máy của mình. Nếu Codespaces báo hết hạn mức hoặc yêu cầu thanh toán, dừng tại đó; chưa có triển khai trực tuyến khác.
+
 ## Chạy xem trước
 
 Cần Node.js **24 LTS** (tối thiểu 22.13), npm và máy có ổ đĩa ghi được. Tại thư mục repository:
