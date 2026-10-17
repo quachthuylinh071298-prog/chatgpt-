@@ -27,6 +27,10 @@ Nếu đã tạo Codespaces trước khi có bản sửa:
 3. Chờ quá trình cài/build hoàn tất. Mở tab **Cổng / PORTS**, tìm **3000**, chọn **Open in Browser**.
 4. Nếu vẫn vào recovery, mở tab **creation.log** và gửi các dòng lỗi cuối; chưa nên chạy lệnh npm trong môi trường recovery.
 
+### Nếu đăng nhập báo “Yêu cầu không cùng nguồn”
+
+Đã bổ sung nhận diện địa chỉ bên ngoài khi qua proxy Codespaces, giữ kiểm tra CSRF. Nếu môi trường đang chạy bản cũ, chạy `git pull --ff-only` trong Terminal rồi chọn **Codespaces: Rebuild Container** bằng **Ctrl + Shift + P**. Chờ cài/build xong và mở lại cổng 3000. Chỉ chạy `npm run browser` khi máy chủ cũ vẫn đang chạy sẽ không thay thế mã API đang phục vụ. Giữ nguyên mật khẩu hiện tại; lỗi này xảy ra trước khi kiểm tra mật khẩu.
+
 ## Chạy xem trước
 
 Cần Node.js **24 LTS** (tối thiểu 22.13), npm và máy có ổ đĩa ghi được. Tại thư mục repository:

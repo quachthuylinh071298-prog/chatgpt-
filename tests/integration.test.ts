@@ -51,6 +51,21 @@ test("API: auth → tạo dự án → CSV → hàng đợi → báo cáo → c�
       password: process.env.APP_PASSWORD,
     });
     assert.equal(login.status, 200);
+    const proxiedLogin = await POST(
+      new NextRequest(origin + "/api/login", {
+        method: "POST",
+        headers: {
+          host: "localhost:3000",
+          origin: "https://example-3000.app.github.dev",
+          "sec-fetch-site": "same-origin",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ password: process.env.APP_PASSWORD }),
+      }),
+    );
+    assert.equal(proxiedLogin.status, 200);
+    assert.match(proxiedLogin.headers.get("set-cookie") || "", /Secure/);
+
     const publicHostLogin = await POST(
       new NextRequest(origin + "/api/login", {
         method: "POST",

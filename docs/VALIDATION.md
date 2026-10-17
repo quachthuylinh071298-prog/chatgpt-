@@ -9,7 +9,7 @@ Kiểm tra ngày 17/10/2026 trên Linux, Node.js 24.19.0, Next.js 15.5.28. Các 
 | `npm run build`     | Đạt             | Production build, type validation và lint tích hợp                        |
 | `npm run lint`      | Đạt             | ESLint Next.js/TypeScript                                                 |
 | `npm run typecheck` | Đạt             | TypeScript strict                                                         |
-| `npm test`          | Đạt             | 8 unit test + 1 integration test gồm nhiều bước API                       |
+| `npm test`          | Đạt             | 9 unit test + 1 integration test gồm nhiều bước API                       |
 | Chromium desktop    | Đạt             | Viewport 1440×1100, không có page error                                   |
 | Chromium mobile     | Đạt             | Viewport 390×844, menu và điều hướng, không tràn ngang document           |
 | XLSX                | Đạt             | Tải tệp từ UI; integration mở được byte stream ZIP Excel                  |
@@ -48,3 +48,9 @@ Browser QA đã phát hiện lỗi Origin khi truy cập qua host công khai kh�
 ## Sửa lỗi cấu hình Codespaces
 
 Ảnh người dùng gửi cho thấy Codespaces ở recovery mode trước khi cài ứng dụng. Kiểm tra trực tiếp registry MCR phát hiện tag `devcontainers/javascript-node:1-24-bookworm` trả HTTP 404 MANIFEST_UNKNOWN. Tag `devcontainers/javascript-node:24-bookworm` trả HTTP 200 (manifest digest tại thời điểm kiểm tra: `sha256:16eb68aa0d17eedaaf2566b180854fe4e506478e35aadf790fb02aa089024f13`). Đã sửa devcontainer sang tag tồn tại và thêm hướng dẫn pull + rebuild cho Codespaces đã tạo. Chưa có quyền truy cập Codespaces của người dùng để xác minh rebuild thực tế; không khẳng định ứng dụng trong Codespaces của người dùng đã chạy.
+
+## Sửa đăng nhập sau proxy Codespaces
+
+Thông báo “Yêu cầu không cùng nguồn” trên ảnh đăng nhập cho thấy request bị CSRF từ chối trước khi kiểm tra mật khẩu. Đã tách `lib/request-origin.ts`: nhận diện Fetch Metadata `Sec-Fetch-Site: same-origin` do trình duyệt đặt, yêu cầu Origin HTTP/HTTPS hợp lệ, từ chối metadata cross-site/same-site. Trình duyệt không có Fetch Metadata dùng APP_ORIGIN hoặc hostname Codespaces chính xác từ môi trường; không tin tùy ý header X-Forwarded-Host. Cookie Secure được xác định từ Origin đã kiểm tra.
+
+Kiểm thử thêm trường hợp URL nội bộ HTTP localhost, Origin bên ngoài HTTPS Codespaces, cookie Secure, origin thiếu/null, hostname Codespaces khác và cross-site. Kết quả: 9 unit test + 1 integration test đạt; production build kèm lint/typecheck đạt. Chưa kiểm tra trực tiếp trên Codespaces của người dùng; cần pull và rebuild để thay tiến trình đang chạy bản cũ.

@@ -32,6 +32,7 @@ import {
 } from "@/lib/domain";
 import { parseUpload, allowedColumns } from "@/lib/importer";
 import { connectionStatus } from "@/lib/connectors";
+import { isSameOriginRequest } from "@/lib/request-origin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const attempts = new Map<string, { count: number; until: number }>();
@@ -57,10 +58,14 @@ async function handle(req: NextRequest) {
   const parts = req.nextUrl.pathname.slice(5).split("/");
   const method = req.method;
   try {
-    const expectedOrigin =
-      process.env.APP_ORIGIN ||
-      `${req.nextUrl.protocol}//${req.headers.get("host") || req.nextUrl.host}`;
-    if (method !== "GET" && req.headers.get("origin") !== expectedOrigin)
+    if (
+      method !== "GET" &&
+      !isSameOriginRequest(req.headers, req.url, {
+        appOrigin: process.env.APP_ORIGIN,
+        codespace: process.env.CODESPACE_NAME,
+        forwardingDomain: process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN,
+      })
+    )
       return response({ error: "Yêu cầu không cùng nguồn." }, 403);
     if (parts[0] === "auth" && method === "GET")
       return response({
@@ -99,7 +104,7 @@ async function handle(req: NextRequest) {
       result.cookies.set("mmi_session", newSession(), {
         httpOnly: true,
         sameSite: "strict",
-        secure: expectedOrigin.startsWith("https://"),
+        secure: req.headers.get("origin")?.startsWith("https://") === true,
         path: "/",
         maxAge: 43200,
       });

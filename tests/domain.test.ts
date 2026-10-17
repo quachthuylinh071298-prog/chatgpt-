@@ -113,3 +113,78 @@ test("Hồ sơ khởi tạo không tự bịa chuyên khoa", () => {
   assert.equal(p.specialty, "");
   assert.equal(p.location, "");
 });
+
+test("CSRF nhận diện origin trình duyệt qua proxy và từ chối cross-site", async () => {
+  const { isSameOriginRequest } = await import("../lib/request-origin");
+  const internal = "http://localhost:3000/api/login";
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({
+        origin: "https://example-3000.app.github.dev",
+        "sec-fetch-site": "same-origin",
+        host: "localhost:3000",
+      }),
+      internal,
+    ),
+    true,
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({
+        origin: "https://evil.test",
+        "sec-fetch-site": "cross-site",
+      }),
+      internal,
+    ),
+    false,
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({
+        origin: "http://localhost:3000",
+        "sec-fetch-site": "same-site",
+      }),
+      internal,
+    ),
+    false,
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({ origin: "null", "sec-fetch-site": "same-origin" }),
+      internal,
+    ),
+    false,
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({ "sec-fetch-site": "same-origin" }),
+      internal,
+    ),
+    false,
+  );
+  const config = { codespace: "example", forwardingDomain: "app.github.dev" };
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({ origin: "https://example-3000.app.github.dev" }),
+      internal,
+      config,
+    ),
+    true,
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({ origin: "https://other-3000.app.github.dev" }),
+      internal,
+      config,
+    ),
+    false,
+  );
+  assert.equal(
+    isSameOriginRequest(
+      new Headers({ origin: "https://canonical.test" }),
+      internal,
+      { appOrigin: "https://canonical.test/" },
+    ),
+    true,
+  );
+});

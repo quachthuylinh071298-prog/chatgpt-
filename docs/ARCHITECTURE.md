@@ -40,7 +40,7 @@ API thêm hàng đợi rồi trả 202; UI polling mỗi 2,5 giây khi có queue
 
 ## An toàn và giới hạn
 
-Một không gian chung, một mật khẩu quản trị; chưa có tenant hoặc quyền người dùng. Cookie HttpOnly, SameSite Strict, Secure trên HTTPS. Session HMAC gồm expiry/nonce; kiểm tra Origin trên mọi mutation. Không có OAuth giả. API từ chối trước khi seed/read/write nếu chưa đăng nhập. Các bí mật nằm trong `.env.local`, không trả qua API. Rate limit login trong bộ nhớ toàn tài khoản (8 lần/15 phút), reset khi restart: cần proxy rate limit và account identities ở production nhiều người.
+Một không gian chung, một mật khẩu quản trị; chưa có tenant hoặc quyền người dùng. Cookie HttpOnly, SameSite Strict, Secure trên HTTPS. Session HMAC gồm expiry/nonce; kiểm tra Origin và Fetch Metadata trên mọi mutation; khi qua proxy, nhận diện cùng nguồn theo địa chỉ trình duyệt, không chỉ Host nội bộ. Không có OAuth giả. API từ chối trước khi seed/read/write nếu chưa đăng nhập. Các bí mật nằm trong `.env.local`, không trả qua API. Rate limit login trong bộ nhớ toàn tài khoản (8 lần/15 phút), reset khi restart: cần proxy rate limit và account identities ở production nhiều người.
 
 Upload tối đa 5 MB, 10.000 dòng, whitelist cột, từ chối công thức Excel. Chưa phải parser sandbox trước ZIP bomb: triển khai hạn chế người dùng và chỉ nhập file tin cậy; mở rộng phải parse trong process có memory/time limit, giới hạn kích thước giải nén. PDF/DOCX chưa hỗ trợ. Dữ liệu lưu trên filesystem, chưa mã hóa và backup tự động.
 
