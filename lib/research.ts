@@ -9,6 +9,14 @@ import {
 } from "./domain";
 import { connectors } from "./connectors";
 import { provider } from "./ai";
+import {
+  briefVersion,
+  briefCollectedAt,
+  briefNotice,
+  briefSections,
+  briefSources,
+  matchesHuuChung,
+} from "./huu-chung-brief";
 import { getProject, observations, reports, storeReport, db, Job } from "./db";
 export type ResearchRequest = {
   start: string;
@@ -22,7 +30,15 @@ export function fingerprint(
   r: ResearchRequest,
 ) {
   return createHash("sha256")
-    .update(JSON.stringify({ p, rows, r }))
+    .update(
+      JSON.stringify({
+        p,
+        rows,
+        r,
+        engineVersion: "research-2",
+        brief: matchesHuuChung(p.facebook) ? briefVersion : null,
+      }),
+    )
     .digest("hex");
 }
 export async function buildResearch(
@@ -50,6 +66,25 @@ export async function buildResearch(
     logs.push(await connectors.meta.collect(p.facebook));
   if (r.sources.includes("web"))
     logs.push(await connectors.web.collect(p.website));
+  const includeBrief =
+    matchesHuuChung(p.facebook) &&
+    r.sources.includes("web") &&
+    r.start <= briefCollectedAt.slice(0, 10) &&
+    r.end >= briefCollectedAt.slice(0, 10);
+  if (includeBrief)
+    for (const source of briefSources)
+      logs.push({
+        name: `${source.id} — ${source.name}`,
+        url: source.url,
+        status: "editorial_snapshot",
+        collectedAt: briefCollectedAt,
+        freshness: previous?.sourceLogs.some(
+          (s) => s.url === source.url && s.collectedAt === briefCollectedAt,
+        )
+          ? "unchanged"
+          : "new",
+        reason: `Bản lưu biên soạn ngày 17/10/2026; lần chạy này không truy xuất lại trang. ${source.note}`,
+      });
   const metrics = kpis(rows);
   let aiText: string | null = null,
     aiStatus = "Không sử dụng AI";
@@ -127,6 +162,14 @@ export async function buildResearch(
       "Dừng: kết luận không có bằng chứng; mới: bổ sung nguồn còn thiếu",
     ],
   ];
+  if (includeBrief)
+    briefSections.forEach((section, i) => {
+      findings[i] = [
+        ...(i === 2 || i === 4 || i === 5 ? findings[i] : []),
+        ...section.findings,
+      ];
+      actions[i] = section.actions;
+    });
   return {
     id: randomUUID(),
     projectId: p.id,
@@ -144,16 +187,22 @@ export async function buildResearch(
       title,
       findings: findings[i],
       actions: actions[i],
-      confidence:
-        "Dữ liệu người dùng / giả định chiến lược; chưa xác minh độc lập",
+      confidence: includeBrief
+        ? "Nguồn công khai đã đọc (bản lưu 17/10) + giả thuyết chiến lược cần kiểm chứng"
+        : "Dữ liệu người dùng / giả định chiến lược; chưa xác minh độc lập",
     })),
     aiText,
     aiStatus,
-    summary: `Phân tích giới hạn trên ${rows.length} ngày dữ liệu người dùng. ${logs.some((l) => l.status === "unavailable") ? "Có nguồn không thể truy xuất. " : ""}Không phải báo cáo nghiên cứu web đã xác minh.`,
+    summary: includeBrief
+      ? `${briefNotice} Có ${rows.length} ngày số liệu người dùng trong phạm vi.`
+      : `Phân tích giới hạn trên ${rows.length} ngày dữ liệu người dùng. ${logs.some((l) => l.status === "unavailable") ? "Có nguồn không thể truy xuất. " : ""}Không phải báo cáo nghiên cứu web đã xác minh.`,
     coverage: logs.length
       ? Math.round(
-          (logs.filter((l) => l.status === "user_provided" && rows.length > 0)
-            .length /
+          (logs.filter(
+            (l) =>
+              l.status === "editorial_snapshot" ||
+              (l.status === "user_provided" && rows.length > 0),
+          ).length /
             logs.length) *
             100,
         )

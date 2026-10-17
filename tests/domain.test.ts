@@ -225,3 +225,17 @@ test("Repair chỉ dừng tiến trình ứng dụng của chính repository", a
     false,
   );
 });
+
+test("Bản biên soạn chỉ khớp fanpage đã xác nhận, có nguồn và 30 chủ đề", async () => {
+  const { matchesHuuChung, clinicalTopics, briefSources } =
+    await import("../lib/huu-chung-brief");
+  assert.equal(
+    matchesHuuChung("https://www.facebook.com/BS.TTUT.huuchung"),
+    true,
+  );
+  assert.equal(matchesHuuChung("https://evil.test/BS.TTUT.huuchung"), false);
+  assert.equal(matchesHuuChung("https://facebook.com/another"), false);
+  assert.equal(clinicalTopics.length, 30);
+  assert.equal(new Set(clinicalTopics).size, 30);
+  assert.ok(briefSources.every((s) => s.url.startsWith("https://")));
+});

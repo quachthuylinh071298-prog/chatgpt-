@@ -60,3 +60,9 @@ Kiểm thử thêm trường hợp URL nội bộ HTTP localhost, Origin bên ng
 Thêm `npm run repair` dành cho Codespaces Linux: nhận diện website/worker theo cwd chính xác và lệnh chương trình, loại trừ bản thân và tiến trình không liên quan, gửi SIGTERM chờ kết thúc, build, khởi động lại và xác minh API trả `loginVersion: 2`. Giữ nguyên mật khẩu, SQLite và các file dữ liệu. UI hiện “Bản đăng nhập: 2” để phân biệt máy chủ đã cập nhật với bản cũ.
 
 Unit test thêm trường hợp không dừng ứng dụng ở repository khác hoặc Node process không liên quan. Kiểm tra runtime riêng với cấu hình/database QA tạm: chạy hai tiến trình cũ, repair, xác nhận PID cả hai được thay mới, cấu hình được giữ, login HTTPS-origin qua HTTP nội bộ trả 200 và cookie Secure, cross-site trả 403. Không có quyền chạy repair trực tiếp trên Codespaces của người dùng; người dùng cần chạy lệnh trên Terminal của Codespaces đó.
+
+## Bổ sung nghiên cứu biên soạn có nguồn
+
+Đã mở và đối chiếu 7 URL công khai qua công cụ web ngày 17/10/2026: MSC Clinic, hai hồ sơ BookingCare, WHO, Tâm Anh, MEDIPLUS và Sun Medicare. Người dùng xác nhận đúng bác sĩ trong trao đổi; Facebook không truy xuất được. Bản nguồn được lưu trong `lib/huu-chung-brief.ts` và xuất ra `docs/RESEARCH-HUU-CHUNG.md`, không phải kết quả thu thập tự động.
+
+Test xác minh bản lưu chỉ đính kèm đúng fanpage và khoảng ngày có 17/10; timestamp không đổi, dự án khác không bị trộn nội dung, KPI thiếu vẫn null, xuất Excel có dữ liệu báo cáo. Có 11 unit test và 1 integration test đạt, build production kèm lint/typecheck đạt. Chưa có search connector chạy trực tiếp trong ứng dụng; chưa benchmark đủ 5–10 đối thủ hoặc phân tích Facebook.

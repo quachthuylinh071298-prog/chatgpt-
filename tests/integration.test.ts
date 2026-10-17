@@ -173,6 +173,76 @@ test("API: auth → tạo dự án → CSV → hàng đợi → báo cáo → c�
     assert.equal(otherDetail.reports[0].metrics.leads, null);
     assert.equal(otherDetail.reports[0].coverage, 0);
     assert.match(otherDetail.reports[0].aiStatus, /Chưa cấu hình/);
+    // Public-source editorial snapshot is scoped to the confirmed brand and date.
+    const doctor = await (
+      await call("projects", "POST", {
+        name: "Hữu Thị Chung",
+        facebook: "https://www.facebook.com/BS.TTUT.huuchung",
+      })
+    ).json();
+    await call(`projects/${doctor.id}/research`, "POST", {
+      ...request,
+      sources: ["web"],
+      useAI: false,
+    });
+    await processJob(claimJob()!);
+    const researched = await (await call("projects/" + doctor.id)).json();
+    assert.equal(
+      researched.reports[0].sourceLogs.filter(
+        (s: { status: string }) => s.status === "editorial_snapshot",
+      ).length,
+      7,
+    );
+    assert.ok(
+      researched.reports[0].sections[0].findings.some((s: string) =>
+        s.includes("WHO"),
+      ),
+    );
+    assert.ok(
+      researched.reports[0].sourceLogs
+        .filter((s: { status: string }) => s.status === "editorial_snapshot")
+        .every(
+          (s: { collectedAt: string }) =>
+            s.collectedAt === "2026-10-17T09:02:44.000Z",
+        ),
+    );
+    assert.equal(researched.reports[0].metrics.leads, null);
+    assert.equal(
+      (
+        await call(
+          `projects/${doctor.id}/export?report=${researched.reports[0].id}`,
+        )
+      ).status,
+      200,
+    );
+    await call(`projects/${doctor.id}/research`, "POST", {
+      ...request,
+      start: "2026-09-01",
+      end: "2026-09-30",
+      sources: ["web"],
+      useAI: false,
+    });
+    await processJob(claimJob()!);
+    const historical = await (await call("projects/" + doctor.id)).json();
+    assert.equal(
+      historical.reports[0].sourceLogs.some(
+        (s: { status: string }) => s.status === "editorial_snapshot",
+      ),
+      false,
+    );
+    await call(`projects/${other.id}/research`, "POST", {
+      ...request,
+      sources: ["web"],
+      useAI: false,
+    });
+    await processJob(claimJob()!);
+    const unrelated = await (await call("projects/" + other.id)).json();
+    assert.equal(
+      unrelated.reports[0].sourceLogs.some(
+        (s: { status: string }) => s.status === "editorial_snapshot",
+      ),
+      false,
+    );
   } finally {
     db.close();
     rmSync(directory, { recursive: true, force: true });

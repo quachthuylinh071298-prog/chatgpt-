@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { topicGroups } from "./content-topics";
+import { clinicalTopics, matchesHuuChung } from "./huu-chung-brief";
 const webURL = z
   .string()
   .url()
@@ -133,7 +134,7 @@ export const steps = [
 export type SourceLog = {
   name: string;
   url: string | null;
-  status: "user_provided" | "unavailable";
+  status: "user_provided" | "editorial_snapshot" | "unavailable";
   collectedAt: string | null;
   reason: string;
   freshness: "new" | "unchanged" | "unavailable";
@@ -166,6 +167,13 @@ export function contentIdeas(project: Project, count = 30) {
   const topics = topicGroups.flatMap((group) =>
     group.questions.map((question) => ({ pillar: group.pillar, question })),
   );
+  if (matchesHuuChung(project.facebook))
+    topics.unshift(
+      ...clinicalTopics.map((question) => ({
+        pillar: "Câu hỏi Nội Cơ xương khớp — cần bác sĩ duyệt",
+        question,
+      })),
+    );
   return Array.from({ length: count }, (_, i) => ({
     day: i + 1,
     pillar: topics[i % topics.length].pillar,

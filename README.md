@@ -4,6 +4,18 @@ MVP dashboard tiếng Việt cho quản lý dự án và phân tích Marketing y
 
 ![Dashboard MedIntel](docs/images/dashboard.png)
 
+## Bản nghiên cứu có nội dung cho BS.TTƯT. Hữu Thị Chung
+
+[**Đọc bản biên soạn có nguồn ngay tại đây**](docs/RESEARCH-HUU-CHUNG.md).
+
+Bản ngày 17/10/2026 đối chiếu 7 URL công khai, có sáu bước phân tích, ba giả thuyết nhóm khách hàng, hai mô hình cạnh tranh tham chiếu, kế hoạch 90 ngày và 30 chủ đề Nội Cơ xương khớp. Chủ dự án đã xác nhận đúng bác sĩ; nơi/lịch khám hiện tại, số năm kinh nghiệm chưa thống nhất và dữ liệu kinh doanh vẫn cần xác nhận. Facebook không truy xuất được. Không có benchmark 5–10 đối thủ đầy đủ hoặc dữ liệu traffic/Ads đã kiểm chứng.
+
+Trong ứng dụng, dự án có đúng URL fanpage đã cung cấp sẽ hiện nút **Đọc bản nghiên cứu có nguồn** dẫn đến `/research-brief` sau đăng nhập. Content Matrix ưu tiên 30 câu hỏi chuyên khoa cần bác sĩ duyệt. Chọn nguồn **Web** và khoảng thời gian có **17/10/2026** khi tạo phiên bản để đính kèm phân tích này vào báo cáo và xuất Excel/PDF. Báo cáo cũ không thay đổi.
+
+**Đây là bản biên soạn tại một thời điểm, chưa phải chức năng tự nghiên cứu web cho mọi dự án.** Nhật ký ghi nhãn nguồn công khai/bản lưu và giữ nguyên timestamp thu thập. Không đính kèm bản 17/10 vào khoảng thời gian trước đó, không thêm số liệu KPI giả, không sửa hồ sơ bác sĩ người dùng nhập. Engine có phiên bản nên có thể tạo lại báo cáo sau cập nhật nội dung một lần; bấm lặp lại với mọi đầu vào giống hệt vẫn bị chặn.
+
+Với Codespaces đang chạy bản cũ, cập nhật bằng `git pull --ff-only && npm run repair`, sau đó mở lại web. Có thể đọc bản Markdown ở trên ngay mà không cần cập nhật ứng dụng.
+
 ## Mở trực tiếp trong trình duyệt, không cài trên máy
 
 [**Mở MedIntel bằng GitHub Codespaces**](https://codespaces.new/quachthuylinh071298-prog/chatgpt-?ref=feat%2Fmedical-marketing-mvp)

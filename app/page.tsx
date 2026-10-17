@@ -35,6 +35,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { matchesHuuChung } from "@/lib/huu-chung-brief";
 import {
   Project,
   ProjectInput,
@@ -611,6 +613,24 @@ export default function App() {
               </button>
             </div>
           </div>
+          {p && matchesHuuChung(p.facebook) && (
+            <div className="notice">
+              <Search size={20} />
+              <div>
+                <b>
+                  Đã có bản nghiên cứu biên soạn riêng cho BS. Hữu Thị Chung
+                </b>
+                <p>
+                  Đối chiếu 7 nguồn công khai ngày 17/10/2026, phân tích sáu
+                  bước và 30 chủ đề chuyên khoa. Không cần AI key để đọc bản
+                  này; nguồn không được tự cập nhật.
+                </p>
+                <Link className="btn primary" href="/research-brief">
+                  Đọc bản nghiên cứu có nguồn <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          )}
           {!detail ? (
             <div className="card">
               <Empty title="Đang tải dự án" text="Đang đọc dữ liệu đã lưu…" />
@@ -705,9 +725,11 @@ export default function App() {
                       ],
                       [
                         ShieldCheck,
-                        "Nguồn xác minh bên ngoài",
-                        0,
-                        "Web & Meta chưa được kết nối",
+                        "Nguồn công khai trong báo cáo",
+                        report?.sourceLogs.filter(
+                          (s) => s.status === "editorial_snapshot",
+                        ).length || 0,
+                        "Bản lưu có ngày; chưa tự truy xuất lại",
                         "amber",
                       ],
                     ].map(([Icon, label, value, caption, color]) => {
@@ -2217,14 +2239,16 @@ function SourceTable({ report }: { report: Research }) {
                   <Badge tone={s.status === "unavailable" ? "amber" : "blue"}>
                     {s.status === "unavailable"
                       ? "Không thể truy xuất"
-                      : "Người dùng cung cấp"}
+                      : s.status === "editorial_snapshot"
+                        ? "Nguồn công khai — bản lưu"
+                        : "Người dùng cung cấp"}
                   </Badge>
                 </td>
                 <td>
                   {
                     (
                       {
-                        new: "Dữ liệu nội bộ mới/khác",
+                        new: "Dữ liệu mới/khác trong phiên bản",
                         unchanged: "Dữ liệu giữ nguyên",
                         unavailable: "Không có dữ liệu",
                       } as Record<string, string>

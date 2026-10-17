@@ -48,7 +48,8 @@ export function connectionStatus() {
     {
       name: "Web research / Website",
       status: "Chưa triển khai",
-      detail: "Không tự truy cập website hoặc khẳng định đã đọc nguồn.",
+      detail:
+        "Chưa tự truy cập web. Dự án BS. Hữu Thị Chung có bản nguồn công khai biên soạn ngày 17/10/2026, không được tự làm mới.",
     },
     {
       name: "Meta Graph API",

@@ -31,7 +31,7 @@ SQLite được chọn thay PostgreSQL vì môi trường chưa có database ser
 - Import là transaction. Không lưu file gốc hoặc dữ liệu định danh. Nhập liệu có xác nhận người dùng và whitelist cột; không thể phát hiện mọi PII cố tình nhập vào ô văn bản dự án. Vì vậy AI mặc định không nhận bất cứ văn bản tự do nào.
 - Mỗi report chụp `project`, `rows`, `metrics`, phạm vi ngày, source logs, sáu section và AI status. Không có API sửa/xóa report. Số phiên bản unique theo project.
 - Tỷ lệ dùng giao của ngày có đủ tử/mẫu; số tổng dùng từng cột có dữ liệu, không suy diễn null. Việc so sánh khác độ phủ dữ liệu có thể gây hiểu sai: UI luôn hiện số ngày và phạm vi, không khẳng định causal uplift.
-- Coverage = tỷ lệ nguồn đã chọn có dữ liệu, không phải tỷ lệ thị trường được khảo sát hoặc tỷ lệ bằng chứng được xác minh.
+- Coverage = tỷ lệ dòng nhật ký có dữ liệu người dùng hoặc bản lưu biên soạn; bản lưu không được coi là vừa thu thập. Chỉ số này thể hiện độ phủ nội dung trong nhật ký, không phải tỷ lệ thị trường được khảo sát hoặc tỷ lệ bằng chứng được xác minh.
 - Fingerprint gồm hồ sơ, rows, phạm vi, sources, useAI. Cùng fingerprint với phiên bản gần nhất bị từ chối. Không tự xóa queue, không tự retry lỗi gây phí AI.
 
 ## Tác vụ và khả năng phục hồi
