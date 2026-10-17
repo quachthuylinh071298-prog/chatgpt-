@@ -239,3 +239,44 @@ test("Bản biên soạn chỉ khớp fanpage đã xác nhận, có nguồn và 
   assert.equal(new Set(clinicalTopics).size, 30);
   assert.ok(briefSources.every((s) => s.url.startsWith("https://")));
 });
+
+test("Bộ bảng chiến lược có lịch dự thảo, tỷ trọng và Excel nhất quán", async () => {
+  const { strategyTables } = await import("../lib/strategy-tables");
+  const { createStrategyWorkbook } = await import("../lib/strategy-workbook");
+  const p = {
+    ...projectSchema.parse({
+      name: "BS. Hữu Thị Chung",
+      facebook: "https://www.facebook.com/BS.TTUT.huuchung",
+    }),
+    id: "test",
+    createdAt: "2026-10-17",
+    updatedAt: "2026-10-17",
+  };
+  const tables = strategyTables(p);
+  assert.equal(tables.length, 10);
+  assert.ok(
+    tables.every((t) => t.rows.every((row) => row.length === t.headers.length)),
+  );
+  assert.equal(
+    tables
+      .find((t) => t.id === "pillars")!
+      .rows.reduce((s, r) => s + Number(r[1]), 0),
+    100,
+  );
+  const calendar = tables.find((t) => t.id === "calendar")!;
+  assert.equal(calendar.rows.length, 30);
+  assert.ok(
+    calendar.rows.every((r) => r[9] === "Chưa duyệt" && r[10] === "Dự thảo"),
+  );
+  assert.equal(tables.find((t) => t.id === "scripts")!.rows.length, 3);
+  const book = createStrategyWorkbook(p);
+  const bytes = await book.xlsx.writeBuffer();
+  const loaded = new ExcelJS.Workbook();
+  await loaded.xlsx.load(bytes as never);
+  assert.equal(loaded.worksheets.length, 10);
+  assert.equal(loaded.worksheets[6].getRow(4).getCell(10).value, "Chưa duyệt");
+  assert.equal(
+    loaded.worksheets[9].getRow(4).getCell(3).hyperlink,
+    "https://mscclinic.vn/doi-ngu-chuyen-gia/huu-thi-chung/",
+  );
+});

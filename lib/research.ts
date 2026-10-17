@@ -9,6 +9,7 @@ import {
 } from "./domain";
 import { connectors } from "./connectors";
 import { provider } from "./ai";
+import { strategyTables } from "./strategy-tables";
 import {
   briefVersion,
   briefCollectedAt,
@@ -35,7 +36,7 @@ export function fingerprint(
         p,
         rows,
         r,
-        engineVersion: "research-2",
+        engineVersion: "research-3-tables",
         brief: matchesHuuChung(p.facebook) ? briefVersion : null,
       }),
     )
@@ -191,6 +192,7 @@ export async function buildResearch(
         ? "Nguồn công khai đã đọc (bản lưu 17/10) + giả thuyết chiến lược cần kiểm chứng"
         : "Dữ liệu người dùng / giả định chiến lược; chưa xác minh độc lập",
     })),
+    strategyTables: includeBrief ? strategyTables(p) : undefined,
     aiText,
     aiStatus,
     summary: includeBrief

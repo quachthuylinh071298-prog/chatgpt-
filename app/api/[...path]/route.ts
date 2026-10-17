@@ -32,6 +32,11 @@ import {
 } from "@/lib/domain";
 import { parseUpload, allowedColumns } from "@/lib/importer";
 import { connectionStatus } from "@/lib/connectors";
+import {
+  appendStrategyTables,
+  createStrategyWorkbook,
+} from "@/lib/strategy-workbook";
+import { matchesHuuChung } from "@/lib/huu-chung-brief";
 import { isSameOriginRequest } from "@/lib/request-origin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -136,6 +141,27 @@ async function handle(req: NextRequest) {
           saveProject(projectSchema.parse(await req.json())),
           201,
         );
+    }
+    if (parts[0] === "brief-export" && method === "GET") {
+      const requested = req.nextUrl.searchParams.get("project");
+      const p = requested
+        ? getProject(requested)
+        : listProjects().find((p) => matchesHuuChung(p.facebook));
+      if (!p || !matchesHuuChung(p.facebook))
+        return response(
+          { error: "Không tìm thấy dự án phù hợp với bản biên soạn." },
+          404,
+        );
+      const book = createStrategyWorkbook(p);
+      return new NextResponse(new Uint8Array(await book.xlsx.writeBuffer()), {
+        headers: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition":
+            'attachment; filename="nghien-cuu-huu-chung-bang-chien-luoc.xlsx"',
+          "Cache-Control": "no-store",
+        },
+      });
     }
     if (parts[0] === "template" && method === "GET")
       return new NextResponse(allowedColumns.join(",") + "\n", {
@@ -304,6 +330,8 @@ async function handle(req: NextRequest) {
             }),
           );
         }
+        if (r.strategyTables?.length)
+          appendStrategyTables(book, r.project, r.strategyTables);
         return new NextResponse(new Uint8Array(await book.xlsx.writeBuffer()), {
           headers: {
             "Content-Type":

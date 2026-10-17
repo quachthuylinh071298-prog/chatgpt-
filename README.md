@@ -16,6 +16,16 @@ Trong ứng dụng, dự án có đúng URL fanpage đã cung cấp sẽ hiện 
 
 Với Codespaces đang chạy bản cũ, cập nhật bằng `git pull --ff-only && npm run repair`, sau đó mở lại web. Có thể đọc bản Markdown ở trên ngay mà không cần cập nhật ứng dụng.
 
+[Đọc bộ 10 bảng đề xuất](docs/STRATEGY-TABLES-HUU-CHUNG.md) · [Xem ảnh giao diện bảng](docs/images/strategy-tables.png).
+
+### Cấu trúc báo cáo theo bảng
+
+Trang `/research-brief` có 10 bảng: hồ sơ thương hiệu; chân dung khách hàng theo nhiều chiều; Insight/định vị; mô hình cạnh tranh tham chiếu; chiến lược theo phễu; Content Direction và tỷ trọng thử nghiệm; lịch 30 nội dung; ba kịch bản video; phản hồi CSKH; nguồn và khoảng trống. Có mục lục neo và nút tải Excel 10 tab; các bảng có header, wrap text, bộ lọc, freeze hàng/cột và đường dẫn nguồn.
+
+Các bảng được biên soạn riêng từ nguồn công khai và giả thuyết của dự án, không sử dụng thông tin cá nhân, kịch bản bệnh học hoặc dữ liệu kinh doanh của các tài liệu tham khảo. Giữ màu Tory Blue theo thương hiệu ứng dụng. Các slot lịch chưa phải ngày đăng đã chốt, trạng thái đều dự thảo/chưa duyệt, tỷ trọng biên tập chưa phải số liệu đã đo. Kịch bản video hiện tập trung vào chuẩn bị và giao tiếp, không thay thế nội dung chuyên môn được bác sĩ phê duyệt.
+
+Nút **Tải Excel 10 bảng** không cần tạo tác vụ mới; API có xác thực và chỉ xuất cho dự án có fanpage đã xác nhận. Các báo cáo có bản lưu nghiên cứu khi xuất Excel cũng bổ sung 10 tab này; phần số liệu và hồ sơ lấy theo snapshot của phiên bản, không dùng dữ liệu cập nhật sau đó.
+
 ## Mở trực tiếp trong trình duyệt, không cài trên máy
 
 [**Mở MedIntel bằng GitHub Codespaces**](https://codespaces.new/quachthuylinh071298-prog/chatgpt-?ref=feat%2Fmedical-marketing-mvp)

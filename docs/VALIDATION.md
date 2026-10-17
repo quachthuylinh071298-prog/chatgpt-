@@ -66,3 +66,11 @@ Unit test thêm trường hợp không dừng ứng dụng ở repository khác 
 Đã mở và đối chiếu 7 URL công khai qua công cụ web ngày 17/10/2026: MSC Clinic, hai hồ sơ BookingCare, WHO, Tâm Anh, MEDIPLUS và Sun Medicare. Người dùng xác nhận đúng bác sĩ trong trao đổi; Facebook không truy xuất được. Bản nguồn được lưu trong `lib/huu-chung-brief.ts` và xuất ra `docs/RESEARCH-HUU-CHUNG.md`, không phải kết quả thu thập tự động.
 
 Test xác minh bản lưu chỉ đính kèm đúng fanpage và khoảng ngày có 17/10; timestamp không đổi, dự án khác không bị trộn nội dung, KPI thiếu vẫn null, xuất Excel có dữ liệu báo cáo. Có 11 unit test và 1 integration test đạt, build production kèm lint/typecheck đạt. Chưa có search connector chạy trực tiếp trong ứng dụng; chưa benchmark đủ 5–10 đối thủ hoặc phân tích Facebook.
+
+## Bộ bảng nghiên cứu và triển khai
+
+Đã áp dụng cấu trúc bảng phân tích và triển khai: hồ sơ, ma trận khách hàng, insight, benchmark, phễu, pillars, lịch, scripts, CSKH, nguồn. Nội dung được viết cho dự án từ các bằng chứng công khai đã có; không chép nội dung hoặc dữ liệu của tài liệu tham khảo vào repository. Chưa mở rộng phạm vi thu thập nguồn thực tế hoặc tuyên bố mọi giả thuyết đã được kiểm chứng.
+
+Kiểm thử kiểm tra đủ 10 bảng, số cột khớp, tổng tỷ trọng 100, lịch 30 dòng đều chưa duyệt/dự thảo, ba kịch bản video, đọc lại workbook Excel với hyperlink nguồn; API yêu cầu xác thực và từ chối xuất bộ bảng cho dự án không phù hợp.
+
+Kết quả xác minh bộ bảng: 12 unit test + 1 integration test đạt; production build kèm lint/typecheck đạt. Browser QA mở được bộ bảng có xác thực, tải Excel 10 tab và kiểm tra không tràn ngang document ở 390px; các bảng rộng cuộn trong vùng riêng. Export báo cáo dùng bảng đã chụp tại thời điểm tạo báo cáo, không tái tạo theo hồ sơ hiện tại hoặc phiên bản template mới. Hai tài liệu tham khảo được đọc qua connector trong các vùng giới hạn, chỉ dùng để rút phương pháp/cấu trúc; không chỉnh sửa file gốc và không đưa nội dung khách hàng của chúng vào repository công khai.

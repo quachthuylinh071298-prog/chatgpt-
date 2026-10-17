@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { StrategyTable } from "./strategy-tables";
 import { topicGroups } from "./content-topics";
 import { clinicalTopics, matchesHuuChung } from "./huu-chung-brief";
 const webURL = z
@@ -158,6 +159,7 @@ export type Research = {
     actions: string[];
     confidence: string;
   }[];
+  strategyTables?: StrategyTable[];
   aiText: string | null;
   aiStatus: string;
   summary: string;

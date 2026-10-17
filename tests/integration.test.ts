@@ -187,6 +187,46 @@ test("API: auth → tạo dự án → CSV → hàng đợi → báo cáo → c�
     });
     await processJob(claimJob()!);
     const researched = await (await call("projects/" + doctor.id)).json();
+    assert.equal(researched.reports[0].strategyTables.length, 10);
+    const structured = await call("brief-export?project=" + doctor.id);
+    assert.equal(structured.status, 200);
+    const { default: ExcelJS } = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(
+      Buffer.from(await structured.arrayBuffer()) as never,
+    );
+    assert.equal(workbook.worksheets.length, 10);
+    assert.equal(
+      workbook.getWorksheet("07. Lịch biên tập 30 nội dung")!.rowCount,
+      33,
+    );
+    assert.equal((await call("brief-export?project=" + other.id)).status, 404);
+    await call("projects/" + doctor.id, "PATCH", {
+      name: "Hữu Thị Chung",
+      facebook: "https://www.facebook.com/BS.TTUT.huuchung",
+      budget: 999999,
+    });
+    const snapshotExport = await call(
+      `projects/${doctor.id}/export?report=${researched.reports[0].id}`,
+    );
+    assert.equal(snapshotExport.status, 200);
+    const snapshotBook = new ExcelJS.Workbook();
+    await snapshotBook.xlsx.load(
+      Buffer.from(await snapshotExport.arrayBuffer()) as never,
+    );
+    assert.equal(snapshotBook.worksheets.length, 15);
+    const profileSheet = snapshotBook.getWorksheet("01. Hồ sơ thương hiệu")!;
+    let oldBudget: unknown;
+    profileSheet.eachRow((row) => {
+      if (row.getCell(1).value === "Ngân sách 90 ngày")
+        oldBudget = row.getCell(2).value;
+    });
+    assert.equal(
+      oldBudget,
+      0,
+      "Xuất báo cáo giữ ngân sách trong snapshot, không lấy hồ sơ vừa sửa",
+    );
+
     assert.equal(
       researched.reports[0].sourceLogs.filter(
         (s: { status: string }) => s.status === "editorial_snapshot",

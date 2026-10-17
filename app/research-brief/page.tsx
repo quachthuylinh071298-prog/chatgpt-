@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { strategyTables } from "@/lib/strategy-tables";
+import { listProjects, getProject } from "@/lib/db";
+import { matchesHuuChung } from "@/lib/huu-chung-brief";
 import { validSession } from "@/lib/auth";
 import {
   briefNotice,
@@ -9,8 +12,18 @@ import {
   clinicalTopics,
 } from "@/lib/huu-chung-brief";
 export const dynamic = "force-dynamic";
-export default async function ResearchBrief() {
+export default async function ResearchBrief({
+  searchParams,
+}: {
+  searchParams: Promise<{ project?: string }>;
+}) {
   if (!validSession((await cookies()).get("mmi_session")?.value)) redirect("/");
+  const params = await searchParams;
+  const project = params.project
+    ? getProject(params.project)
+    : listProjects().find((p) => matchesHuuChung(p.facebook));
+  if (!project || !matchesHuuChung(project.facebook)) redirect("/");
+  const tables = strategyTables(project);
   return (
     <main className="main" style={{ maxWidth: 1150, paddingBottom: 40 }}>
       <Link className="btn" href="/">
@@ -26,6 +39,72 @@ export default async function ResearchBrief() {
       <div className="notice">
         <p>{briefNotice}</p>
       </div>
+      <section className="card">
+        <div className="card-heading">
+          <div>
+            <h2>Bộ bảng nghiên cứu & triển khai</h2>
+            <p>
+              Cấu trúc bảng để đối chiếu từng nhóm khách hàng, phễu, tuyến nội
+              dung và công việc.
+            </p>
+          </div>
+          <a
+            download
+            className="btn primary"
+            href={"/api/brief-export?project=" + project.id}
+          >
+            Tải Excel 10 bảng
+          </a>
+        </div>
+        <div className="tabs">
+          {tables.map((t) => (
+            <a className="btn" href={"#" + t.id} key={t.id}>
+              {t.title}
+            </a>
+          ))}
+        </div>
+        <p>
+          Trạng thái và tỷ trọng dưới đây là đề xuất/dự thảo. Chưa có phê duyệt
+          chuyên môn hoặc dữ liệu đo lường cho các giả thuyết.
+        </p>
+      </section>
+      {tables.map((table) => (
+        <section id={table.id} className="card strategy-table" key={table.id}>
+          <h2>{table.title}</h2>
+          <p style={{ marginTop: 10 }}>{table.note}</p>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  {table.headers.map((h) => (
+                    <th key={h}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {table.rows.map((row, i) => (
+                  <tr key={i}>
+                    {row.map((cell, j) => (
+                      <td key={j}>
+                        {typeof cell === "string" &&
+                        cell.startsWith("https://") ? (
+                          <a target="_blank" rel="noreferrer" href={cell}>
+                            Mở nguồn ↗
+                          </a>
+                        ) : cell === null ? (
+                          "Chưa có dữ liệu"
+                        ) : (
+                          cell
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
       <section className="card">
         <h2>Executive Summary</h2>
         <p style={{ marginTop: 15 }}>

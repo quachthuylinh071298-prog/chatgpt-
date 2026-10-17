@@ -625,7 +625,10 @@ export default function App() {
                   bước và 30 chủ đề chuyên khoa. Không cần AI key để đọc bản
                   này; nguồn không được tự cập nhật.
                 </p>
-                <Link className="btn primary" href="/research-brief">
+                <Link
+                  className="btn primary"
+                  href={"/research-brief?project=" + p.id}
+                >
                   Đọc bản nghiên cứu có nguồn <ArrowRight size={16} />
                 </Link>
               </div>

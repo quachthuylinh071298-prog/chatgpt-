@@ -2228,3 +2228,49 @@ select:focus {
     font-size: 13px;
   }
 }
+
+.strategy-table {
+  scroll-margin-top: 20px;
+}
+.strategy-table th {
+  background: #134a9b;
+  color: white;
+  white-space: normal;
+  min-width: 170px;
+}
+.strategy-table td {
+  min-width: 190px;
+  max-width: 370px;
+  white-space: pre-wrap;
+}
+.strategy-table tbody tr:nth-child(even) {
+  background: #f5f9fd;
+}
+.strategy-table td:first-child {
+  font-weight: 600;
+  color: #315579;
+}
+.strategy-table th:first-child,
+.strategy-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: #edf4fc;
+  z-index: 1;
+}
+.strategy-table th:first-child {
+  background: #134a9b;
+  color: white;
+}
+@media print {
+  .strategy-table {
+    break-inside: auto;
+  }
+  .strategy-table td,
+  .strategy-table th {
+    min-width: 0;
+    font-size: 8px;
+  }
+  .strategy-table td:first-child {
+    position: static;
+  }
+}
