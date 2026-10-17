@@ -9,7 +9,7 @@ Kiểm tra ngày 17/10/2026 trên Linux, Node.js 24.19.0, Next.js 15.5.28. Các 
 | `npm run build`     | Đạt             | Production build, type validation và lint tích hợp                        |
 | `npm run lint`      | Đạt             | ESLint Next.js/TypeScript                                                 |
 | `npm run typecheck` | Đạt             | TypeScript strict                                                         |
-| `npm test`          | Đạt             | 9 unit test + 1 integration test gồm nhiều bước API                       |
+| `npm test`          | Đạt             | 10 unit test + 1 integration test gồm nhiều bước API                      |
 | Chromium desktop    | Đạt             | Viewport 1440×1100, không có page error                                   |
 | Chromium mobile     | Đạt             | Viewport 390×844, menu và điều hướng, không tràn ngang document           |
 | XLSX                | Đạt             | Tải tệp từ UI; integration mở được byte stream ZIP Excel                  |
@@ -53,4 +53,10 @@ Browser QA đã phát hiện lỗi Origin khi truy cập qua host công khai kh�
 
 Thông báo “Yêu cầu không cùng nguồn” trên ảnh đăng nhập cho thấy request bị CSRF từ chối trước khi kiểm tra mật khẩu. Đã tách `lib/request-origin.ts`: nhận diện Fetch Metadata `Sec-Fetch-Site: same-origin` do trình duyệt đặt, yêu cầu Origin HTTP/HTTPS hợp lệ, từ chối metadata cross-site/same-site. Trình duyệt không có Fetch Metadata dùng APP_ORIGIN hoặc hostname Codespaces chính xác từ môi trường; không tin tùy ý header X-Forwarded-Host. Cookie Secure được xác định từ Origin đã kiểm tra.
 
-Kiểm thử thêm trường hợp URL nội bộ HTTP localhost, Origin bên ngoài HTTPS Codespaces, cookie Secure, origin thiếu/null, hostname Codespaces khác và cross-site. Kết quả: 9 unit test + 1 integration test đạt; production build kèm lint/typecheck đạt. Chưa kiểm tra trực tiếp trên Codespaces của người dùng; cần pull và rebuild để thay tiến trình đang chạy bản cũ.
+Kiểm thử thêm trường hợp URL nội bộ HTTP localhost, Origin bên ngoài HTTPS Codespaces, cookie Secure, origin thiếu/null, hostname Codespaces khác và cross-site. Kết quả: 10 unit test + 1 integration test đạt; production build kèm lint/typecheck đạt. Chưa kiểm tra trực tiếp trên Codespaces của người dùng; cần pull và rebuild để thay tiến trình đang chạy bản cũ.
+
+## Cập nhật tiến trình đang chạy
+
+Thêm `npm run repair` dành cho Codespaces Linux: nhận diện website/worker theo cwd chính xác và lệnh chương trình, loại trừ bản thân và tiến trình không liên quan, gửi SIGTERM chờ kết thúc, build, khởi động lại và xác minh API trả `loginVersion: 2`. Giữ nguyên mật khẩu, SQLite và các file dữ liệu. UI hiện “Bản đăng nhập: 2” để phân biệt máy chủ đã cập nhật với bản cũ.
+
+Unit test thêm trường hợp không dừng ứng dụng ở repository khác hoặc Node process không liên quan. Kiểm tra runtime riêng với cấu hình/database QA tạm: chạy hai tiến trình cũ, repair, xác nhận PID cả hai được thay mới, cấu hình được giữ, login HTTPS-origin qua HTTP nội bộ trả 200 và cookie Secure, cross-site trả 403. Không có quyền chạy repair trực tiếp trên Codespaces của người dùng; người dùng cần chạy lệnh trên Terminal của Codespaces đó.

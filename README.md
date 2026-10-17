@@ -27,9 +27,17 @@ Nếu đã tạo Codespaces trước khi có bản sửa:
 3. Chờ quá trình cài/build hoàn tất. Mở tab **Cổng / PORTS**, tìm **3000**, chọn **Open in Browser**.
 4. Nếu vẫn vào recovery, mở tab **creation.log** và gửi các dòng lỗi cuối; chưa nên chạy lệnh npm trong môi trường recovery.
 
-### Nếu đăng nhập báo “Yêu cầu không cùng nguồn”
+### Nếu đăng nhập báo “Yêu cầu không cùng nguồn”, hoặc vẫn chạy bản cũ
 
-Đã bổ sung nhận diện địa chỉ bên ngoài khi qua proxy Codespaces, giữ kiểm tra CSRF. Nếu môi trường đang chạy bản cũ, chạy `git pull --ff-only` trong Terminal rồi chọn **Codespaces: Rebuild Container** bằng **Ctrl + Shift + P**. Chờ cài/build xong và mở lại cổng 3000. Chỉ chạy `npm run browser` khi máy chủ cũ vẫn đang chạy sẽ không thay thế mã API đang phục vụ. Giữ nguyên mật khẩu hiện tại; lỗi này xảy ra trước khi kiểm tra mật khẩu.
+Trong **Terminal** của Codespaces, dán một dòng:
+
+```bash
+git pull --ff-only && npm run repair
+```
+
+Lệnh sửa chỉ dừng website/worker của repository hiện tại, build và chạy lại; không đổi mật khẩu, không xóa dữ liệu hoặc tạo Codespaces mới. Chờ dòng **ĐÃ CẬP NHẬT BẢN ĐĂNG NHẬP 2**, mở lại web qua **Cổng → 3000 → Open in Browser** và nhấn **Ctrl + Shift + R**. Trang đăng nhập phải hiện **Bản đăng nhập: 2**. Dùng mật khẩu hiện tại.
+
+Nếu vẫn lỗi, gửi ảnh thông báo lỗi và dòng phiên bản ở trang đăng nhập (không gửi mật khẩu). Không chỉ chạy `npm run browser`: lệnh đó giữ máy chủ hiện có, có thể vẫn đang phục vụ bản cũ. Lệnh repair yêu cầu Codespaces Linux và `.env.local` đã cấu hình; nếu chưa có file này, chạy `npm run setup` trước và lưu mật khẩu.
 
 ## Chạy xem trước
 

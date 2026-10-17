@@ -219,6 +219,7 @@ export default function App() {
   const [auth, setAuth] = useState<{
       authenticated: boolean;
       configured: boolean;
+      loginVersion?: string;
     } | null>(null),
     [password, setPassword] = useState(""),
     [loginError, setLoginError] = useState("");
@@ -259,7 +260,9 @@ export default function App() {
     [ideaLimit, setIdeaLimit] = useState(30),
     [contentTab, setContentTab] = useState("library");
   useEffect(() => {
-    api<{ authenticated: boolean; configured: boolean }>("auth")
+    api<{ authenticated: boolean; configured: boolean; loginVersion?: string }>(
+      "auth",
+    )
       .then(setAuth)
       .catch((e) => setError(e.message));
   }, []);
@@ -444,6 +447,9 @@ export default function App() {
                 </button>
               </form>
             )}
+            <p style={{ fontSize: 10, marginTop: 16 }}>
+              Bản đăng nhập: {auth.loginVersion || "1"}
+            </p>
             <div className="login-foot">
               <ShieldCheck size={17} /> Chỉ sử dụng dữ liệu Marketing tổng hợp.
               <br />

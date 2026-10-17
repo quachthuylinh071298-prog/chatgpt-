@@ -66,10 +66,14 @@ async function handle(req: NextRequest) {
         forwardingDomain: process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN,
       })
     )
-      return response({ error: "Yêu cầu không cùng nguồn." }, 403);
+      return response(
+        { error: "Yêu cầu không cùng nguồn (bản đăng nhập 2)." },
+        403,
+      );
     if (parts[0] === "auth" && method === "GET")
       return response({
         authenticated: validSession(req.cookies.get("mmi_session")?.value),
+        loginVersion: "2",
         configured: configured(),
       });
     if (parts[0] === "login" && method === "POST") {

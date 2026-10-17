@@ -188,3 +188,40 @@ test("CSRF nhận diện origin trình duyệt qua proxy và từ chối cross-s
     true,
   );
 });
+
+test("Repair chỉ dừng tiến trình ứng dụng của chính repository", async () => {
+  const { isAppProcess } = await import("../scripts/repair-processes.mjs");
+  const root = "/workspaces/medintel";
+  assert.equal(
+    isAppProcess(root, ["next-server (v15.5.28)"], root, 123, 999),
+    true,
+  );
+  assert.equal(
+    isAppProcess(
+      "/workspaces/other",
+      ["next-server (v15.5.28)"],
+      root,
+      123,
+      999,
+    ),
+    false,
+  );
+  assert.equal(
+    isAppProcess(
+      root,
+      ["node", "--import", "tsx", "lib/worker.ts"],
+      root,
+      123,
+      999,
+    ),
+    true,
+  );
+  assert.equal(
+    isAppProcess(root, ["node", "unrelated.js"], root, 123, 999),
+    false,
+  );
+  assert.equal(
+    isAppProcess(root, ["next-server (v15.5.28)"], root, 999, 999),
+    false,
+  );
+});
