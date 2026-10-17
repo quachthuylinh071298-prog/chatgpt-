@@ -16,6 +16,17 @@ MVP dashboard tiếng Việt cho quản lý dự án và phân tích Marketing y
 
 **Đây là môi trường xem trước theo yêu cầu, chưa phải website trực tuyến chạy liên tục.** Link `http://localhost:3000` trong mục bên dưới chỉ dùng khi bạn chạy ứng dụng trên chính máy của mình. Nếu Codespaces báo hết hạn mức hoặc yêu cầu thanh toán, dừng tại đó; chưa có triển khai trực tuyến khác.
 
+### Nếu Codespaces báo “recovery mode due to a container error”
+
+Cấu hình đầu tiên dùng nhầm image `1-24-bookworm` không tồn tại. Đã sửa thành `24-bookworm` và xác nhận registry trả HTTP 200.
+
+Nếu đã tạo Codespaces trước khi có bản sửa:
+
+1. Bấm vùng **Terminal** bên dưới, nhập `git pull --ff-only` rồi Enter để lấy bản mới trên nhánh hiện tại.
+2. Nhấn **Ctrl + Shift + P**, nhập **Codespaces: Rebuild Container**, chọn lệnh đó và xác nhận **Rebuild** nếu được hỏi.
+3. Chờ quá trình cài/build hoàn tất. Mở tab **Cổng / PORTS**, tìm **3000**, chọn **Open in Browser**.
+4. Nếu vẫn vào recovery, mở tab **creation.log** và gửi các dòng lỗi cuối; chưa nên chạy lệnh npm trong môi trường recovery.
+
 ## Chạy xem trước
 
 Cần Node.js **24 LTS** (tối thiểu 22.13), npm và máy có ổ đĩa ghi được. Tại thư mục repository:

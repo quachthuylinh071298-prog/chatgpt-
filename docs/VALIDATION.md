@@ -44,3 +44,7 @@ Browser QA đã phát hiện lỗi Origin khi truy cập qua host công khai kh�
 ![Dashboard không có dữ liệu nghiên cứu giả](images/dashboard.png)
 
 ![Giao diện di động](images/mobile.png)
+
+## Sửa lỗi cấu hình Codespaces
+
+Ảnh người dùng gửi cho thấy Codespaces ở recovery mode trước khi cài ứng dụng. Kiểm tra trực tiếp registry MCR phát hiện tag `devcontainers/javascript-node:1-24-bookworm` trả HTTP 404 MANIFEST_UNKNOWN. Tag `devcontainers/javascript-node:24-bookworm` trả HTTP 200 (manifest digest tại thời điểm kiểm tra: `sha256:16eb68aa0d17eedaaf2566b180854fe4e506478e35aadf790fb02aa089024f13`). Đã sửa devcontainer sang tag tồn tại và thêm hướng dẫn pull + rebuild cho Codespaces đã tạo. Chưa có quyền truy cập Codespaces của người dùng để xác minh rebuild thực tế; không khẳng định ứng dụng trong Codespaces của người dùng đã chạy.
