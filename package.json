@@ -1,0 +1,40 @@
+{
+  "name": "medical-marketing-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "worker": "node --import tsx lib/worker.ts",
+    "test": "node --import tsx tests/domain.test.ts && node --import tsx tests/integration.test.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "setup": "node scripts/setup.mjs",
+    "format": "prettier --write app lib tests scripts docs *.json *.ts *.mjs README.md .github"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "lucide-react": "^0.468.0",
+    "next": "^15.5.12",
+    "papaparse": "^5.5.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@types/node": "^24.0.0",
+    "@types/papaparse": "^5.3.16",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "^15.5.12",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
