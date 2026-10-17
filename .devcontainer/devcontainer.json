@@ -1,0 +1,15 @@
+{
+  "name": "MedIntel — Mở ứng dụng trên trình duyệt",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "MedIntel — Mở website",
+      "onAutoForward": "openBrowser",
+      "requireLocalPort": true
+    }
+  },
+  "postCreateCommand": "npm ci && npm run setup && npm run build",
+  "postStartCommand": "npm run browser",
+  "remoteUser": "node"
+}
