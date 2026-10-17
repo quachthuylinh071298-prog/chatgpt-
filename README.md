@@ -2,7 +2,7 @@
 
 MVP dashboard tiếng Việt cho quản lý dự án và phân tích Marketing y tế. **Chưa phải hệ thống nghiên cứu thị trường hoàn chỉnh.** Không có dữ liệu nghiên cứu giả, không chẩn đoán hoặc chỉ định điều trị.
 
-![Dashboard MedIntel](docs/images/dashboard.png)
+![Dashboard MedIntel](docs/images/final-dashboard.png)
 
 ## Bản nghiên cứu có nội dung cho BS.TTƯT. Hữu Thị Chung
 
@@ -10,7 +10,7 @@ MVP dashboard tiếng Việt cho quản lý dự án và phân tích Marketing y
 
 Bản ngày 17/10/2026 đối chiếu 7 URL công khai, có sáu bước phân tích, ba giả thuyết nhóm khách hàng, hai mô hình cạnh tranh tham chiếu, kế hoạch 90 ngày và 30 chủ đề Nội Cơ xương khớp. Chủ dự án đã xác nhận đúng bác sĩ; nơi/lịch khám hiện tại, số năm kinh nghiệm chưa thống nhất và dữ liệu kinh doanh vẫn cần xác nhận. Facebook không truy xuất được. Không có benchmark 5–10 đối thủ đầy đủ hoặc dữ liệu traffic/Ads đã kiểm chứng.
 
-Trong ứng dụng, dự án có đúng URL fanpage đã cung cấp sẽ hiện nút **Đọc bản nghiên cứu có nguồn** dẫn đến `/research-brief` sau đăng nhập. Content Matrix ưu tiên 30 câu hỏi chuyên khoa cần bác sĩ duyệt. Chọn nguồn **Web** và khoảng thời gian có **17/10/2026** khi tạo phiên bản để đính kèm phân tích này vào báo cáo và xuất Excel/PDF. Báo cáo cũ không thay đổi.
+Trong dashboard, các bảng nằm ngay ở Dự án, Nghiên cứu thị trường, Phân tích đối thủ, Customer Insight, Marketing Strategy, Content Intelligence và Kế hoạch 90 ngày. Dự án bác sĩ có bản biên soạn ban đầu; dự án khác bắt đầu bằng hồ sơ riêng và các bảng chưa có dữ liệu. Chọn nguồn **Web** và khoảng thời gian có **17/10/2026** để đính kèm bản nguồn công khai vào báo cáo.
 
 **Đây là bản biên soạn tại một thời điểm, chưa phải chức năng tự nghiên cứu web cho mọi dự án.** Nhật ký ghi nhãn nguồn công khai/bản lưu và giữ nguyên timestamp thu thập. Không đính kèm bản 17/10 vào khoảng thời gian trước đó, không thêm số liệu KPI giả, không sửa hồ sơ bác sĩ người dùng nhập. Engine có phiên bản nên có thể tạo lại báo cáo sau cập nhật nội dung một lần; bấm lặp lại với mọi đầu vào giống hệt vẫn bị chặn.
 
@@ -20,11 +20,11 @@ Với Codespaces đang chạy bản cũ, cập nhật bằng `git pull --ff-only
 
 ### Cấu trúc báo cáo theo bảng
 
-Trang `/research-brief` có 10 bảng: hồ sơ thương hiệu; chân dung khách hàng theo nhiều chiều; Insight/định vị; mô hình cạnh tranh tham chiếu; chiến lược theo phễu; Content Direction và tỷ trọng thử nghiệm; lịch 30 nội dung; ba kịch bản video; phản hồi CSKH; nguồn và khoảng trống. Có mục lục neo và nút tải Excel 10 tab; các bảng có header, wrap text, bộ lọc, freeze hàng/cột và đường dẫn nguồn.
+Dashboard 2.0 giữ bố cục ban đầu và tích hợp 10 bảng: hồ sơ thương hiệu, chân dung khách hàng, Insight/định vị, đối thủ tham chiếu, chiến lược theo phễu, Content Direction, lịch 30 nội dung, kịch bản video, CSKH và nguồn. Chọn **Sửa dòng** hoặc **Thêm dòng**, áp dụng vào bản nháp rồi **Lưu nghiên cứu**. Dữ liệu lưu riêng từng dự án, có kiểm tra xung đột giữa hai cửa sổ. Đường dẫn cũ `/research-brief` chuyển về mục Báo cáo trong dashboard.
 
 Các bảng được biên soạn riêng từ nguồn công khai và giả thuyết của dự án, không sử dụng thông tin cá nhân, kịch bản bệnh học hoặc dữ liệu kinh doanh của các tài liệu tham khảo. Giữ màu Tory Blue theo thương hiệu ứng dụng. Các slot lịch chưa phải ngày đăng đã chốt, trạng thái đều dự thảo/chưa duyệt, tỷ trọng biên tập chưa phải số liệu đã đo. Kịch bản video hiện tập trung vào chuẩn bị và giao tiếp, không thay thế nội dung chuyên môn được bác sĩ phê duyệt.
 
-Nút **Tải Excel 10 bảng** không cần tạo tác vụ mới; API có xác thực và chỉ xuất cho dự án có fanpage đã xác nhận. Các báo cáo có bản lưu nghiên cứu khi xuất Excel cũng bổ sung 10 tab này; phần số liệu và hồ sơ lấy theo snapshot của phiên bản, không dùng dữ liệu cập nhật sau đó.
+Trong **Báo cáo**, chọn **Bản đang làm việc** để xem toàn bộ bảng, xuất Excel 10 tab hoặc in PDF đầy đủ. Lưu thay đổi trước khi xuất Excel/tạo phiên bản. Chọn nguồn **Trường nghiên cứu đã lưu** khi phân tích để chụp lại nội dung; **Báo cáo đã lưu** giữ nguyên bảng và hồ sơ tại thời điểm tạo. So sánh phiên bản hiển thị thay đổi từng trường theo vị trí dòng. Dữ liệu người dùng nhập được ghi nhãn chưa xác minh độc lập; thời gian lưu không phải thời gian thu thập web. Nội dung tự do không được gửi sang AI.
 
 ## Mở trực tiếp trong trình duyệt, không cài trên máy
 

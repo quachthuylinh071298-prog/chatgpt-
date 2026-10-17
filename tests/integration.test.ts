@@ -283,6 +283,102 @@ test("API: auth → tạo dự án → CSV → hàng đợi → báo cáo → c�
       ),
       false,
     );
+    const generic = await (await call(project)).json();
+    assert.equal(generic.workspace.revision, 0);
+    assert.equal(
+      generic.workspace.tables.find((t: { id: string }) => t.id === "sources")
+        .rows.length,
+      0,
+    );
+    const tables = generic.workspace.tables;
+    tables[0].rows[0][1] = "Thương hiệu đã cập nhật";
+    const savedWorkspace = await call(project + "/workspace", "PUT", {
+      expectedRevision: 0,
+      tables,
+    });
+    assert.equal(savedWorkspace.status, 200);
+    assert.equal((await savedWorkspace.json()).revision, 1);
+    assert.equal(
+      (
+        await call(project + "/workspace", "PUT", {
+          expectedRevision: 0,
+          tables,
+        })
+      ).status,
+      409,
+    );
+    const invalid = structuredClone(tables);
+    invalid[0].rows[0].pop();
+    assert.equal(
+      (
+        await call(project + "/workspace", "PUT", {
+          expectedRevision: 1,
+          tables: invalid,
+        })
+      ).status,
+      400,
+    );
+    const workspaceRequest = {
+      ...request,
+      sources: ["workspace"],
+      useAI: false,
+    };
+    assert.equal(
+      (await call(project + "/research", "POST", workspaceRequest)).status,
+      202,
+    );
+    await processJob(claimJob()!);
+    const firstWorkspaceReport = (await (await call(project)).json())
+      .reports[0];
+    assert.equal(
+      firstWorkspaceReport.strategyTables[0].rows[0][1],
+      "Thương hiệu đã cập nhật",
+    );
+    tables[0].rows[0][1] = "Thương hiệu phiên bản mới";
+    assert.equal(
+      (
+        await call(project + "/workspace", "PUT", {
+          expectedRevision: 1,
+          tables,
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (await call(project + "/research", "POST", workspaceRequest)).status,
+      202,
+    );
+    await processJob(claimJob()!);
+    const revisions = (await (await call(project)).json()).reports;
+    assert.equal(
+      revisions[0].strategyTables[0].rows[0][1],
+      "Thương hiệu phiên bản mới",
+    );
+    assert.equal(
+      revisions.find((r: { id: string }) => r.id === firstWorkspaceReport.id)
+        .strategyTables[0].rows[0][1],
+      "Thương hiệu đã cập nhật",
+    );
+    const { compareResearchFields } = await import("../lib/workspace");
+    assert.equal(
+      compareResearchFields(
+        firstWorkspaceReport.strategyTables,
+        revisions[0].strategyTables,
+      ).count,
+      1,
+    );
+    assert.equal(compareResearchFields(undefined, tables).comparable, false);
+    const currentExport = await call(project + "/workspace-export");
+    assert.equal(currentExport.status, 200);
+    const currentBook = new ExcelJS.Workbook();
+    await currentBook.xlsx.load(
+      Buffer.from(await currentExport.arrayBuffer()) as never,
+    );
+    assert.equal(currentBook.worksheets.length, 10);
+    assert.equal(
+      currentBook.worksheets[0].getCell("B4").value,
+      "Thương hiệu phiên bản mới",
+    );
   } finally {
     db.close();
     rmSync(directory, { recursive: true, force: true });

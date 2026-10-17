@@ -9,6 +9,7 @@ import {
 } from "./domain";
 import { connectors } from "./connectors";
 import { provider } from "./ai";
+import type { ResearchWorkspace } from "./workspace";
 import { strategyTables } from "./strategy-tables";
 import {
   briefVersion,
@@ -18,17 +19,28 @@ import {
   briefSources,
   matchesHuuChung,
 } from "./huu-chung-brief";
-import { getProject, observations, reports, storeReport, db, Job } from "./db";
+import {
+  getResearchWorkspace,
+  getProject,
+  observations,
+  reports,
+  storeReport,
+  db,
+  Job,
+} from "./db";
 export type ResearchRequest = {
   start: string;
   end: string;
-  sources: ("uploaded" | "web" | "meta")[];
+  sources: ("uploaded" | "web" | "meta" | "workspace")[];
   useAI: boolean;
 };
 export function fingerprint(
   p: Project,
   rows: Observation[],
   r: ResearchRequest,
+  workspaceSnapshot: ResearchWorkspace | null = r.sources.includes("workspace")
+    ? getResearchWorkspace(p.id)
+    : null,
 ) {
   return createHash("sha256")
     .update(
@@ -36,7 +48,8 @@ export function fingerprint(
         p,
         rows,
         r,
-        engineVersion: "research-3-tables",
+        engineVersion: "research-4-dashboard",
+        workspace: workspaceSnapshot,
         brief: matchesHuuChung(p.facebook) ? briefVersion : null,
       }),
     )
@@ -48,8 +61,11 @@ export async function buildResearch(
   r: ResearchRequest,
   previous: Research | null,
 ): Promise<Research> {
+  const capturedWorkspace = r.sources.includes("workspace")
+    ? getResearchWorkspace(p.id)
+    : null;
   const now = new Date().toISOString(),
-    hash = fingerprint(p, rows, r),
+    hash = fingerprint(p, rows, r, capturedWorkspace),
     logs: SourceLog[] = [];
   if (r.sources.includes("uploaded"))
     logs.push({
@@ -86,6 +102,22 @@ export async function buildResearch(
           : "new",
         reason: `Bản lưu biên soạn ngày 17/10/2026; lần chạy này không truy xuất lại trang. ${source.note}`,
       });
+  const workspace = capturedWorkspace;
+  if (workspace)
+    logs.push({
+      name: "Trường nghiên cứu do người dùng cập nhật",
+      url: null,
+      status: "user_provided",
+      collectedAt: workspace.updatedAt,
+      freshness: previous?.sourceLogs.some(
+        (s) =>
+          s.name === "Trường nghiên cứu do người dùng cập nhật" &&
+          s.collectedAt === workspace.updatedAt,
+      )
+        ? "unchanged"
+        : "new",
+      reason: `Bản lưu chỉnh sửa ${workspace.revision}; chưa xác minh độc lập. Không phải lần thu thập web mới.`,
+    });
   const metrics = kpis(rows);
   let aiText: string | null = null,
     aiStatus = "Không sử dụng AI";
@@ -171,6 +203,34 @@ export async function buildResearch(
       ];
       actions[i] = section.actions;
     });
+  if (workspace) {
+    const groups = [
+      ["audience", "insight"],
+      ["benchmark"],
+      ["funnel"],
+      ["profile", "pillars"],
+      ["calendar", "scripts"],
+      ["care", "sources"],
+    ];
+    groups.forEach((ids, i) => {
+      const content = workspace.tables
+        .filter((t) => ids.includes(t.id))
+        .flatMap((t) =>
+          t.rows.slice(0, 8).map(
+            (row) =>
+              `Người dùng cung cấp — ${t.title}: ${row
+                .map((v, c) =>
+                  v === null || v === ""
+                    ? ""
+                    : `${t.headers[c]}: ${String(v).slice(0, 450)}`,
+                )
+                .filter(Boolean)
+                .join("; ")}`,
+          ),
+        );
+      findings[i].push(...content);
+    });
+  }
   return {
     id: randomUUID(),
     projectId: p.id,
@@ -192,18 +252,23 @@ export async function buildResearch(
         ? "Nguồn công khai đã đọc (bản lưu 17/10) + giả thuyết chiến lược cần kiểm chứng"
         : "Dữ liệu người dùng / giả định chiến lược; chưa xác minh độc lập",
     })),
-    strategyTables: includeBrief ? strategyTables(p) : undefined,
+    strategyTables:
+      workspace?.tables || (includeBrief ? strategyTables(p) : undefined),
     aiText,
     aiStatus,
-    summary: includeBrief
-      ? `${briefNotice} Có ${rows.length} ngày số liệu người dùng trong phạm vi.`
-      : `Phân tích giới hạn trên ${rows.length} ngày dữ liệu người dùng. ${logs.some((l) => l.status === "unavailable") ? "Có nguồn không thể truy xuất. " : ""}Không phải báo cáo nghiên cứu web đã xác minh.`,
+    summary: workspace
+      ? `Phân tích giới hạn có dữ liệu nghiên cứu do người dùng cập nhật (bản ${workspace.revision}), ${rows.length} ngày chỉ số. Không xác minh độc lập các chỉnh sửa; ${includeBrief ? "có bản nguồn công khai ngày 17/10/2026, chưa truy xuất lại" : "không có thu thập web đã xác minh"}.`
+      : includeBrief
+        ? `${briefNotice} Có ${rows.length} ngày số liệu người dùng trong phạm vi.`
+        : `Phân tích giới hạn trên ${rows.length} ngày dữ liệu người dùng. ${logs.some((l) => l.status === "unavailable") ? "Có nguồn không thể truy xuất. " : ""}Không phải báo cáo nghiên cứu web đã xác minh.`,
     coverage: logs.length
       ? Math.round(
           (logs.filter(
             (l) =>
               l.status === "editorial_snapshot" ||
-              (l.status === "user_provided" && rows.length > 0),
+              (l.status === "user_provided" &&
+                (rows.length > 0 ||
+                  l.name === "Trường nghiên cứu do người dùng cập nhật")),
           ).length /
             logs.length) *
             100,

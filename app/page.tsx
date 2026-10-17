@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback, FormEvent } from "react";
+import { useEffect, useState, useCallback, useRef, FormEvent } from "react";
 import {
   Activity,
   LayoutDashboard,
@@ -35,7 +35,12 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import Link from "next/link";
+import { ResearchWorkspacePanel } from "@/app/components/research-workspace";
+import { WorkspacePrint } from "@/app/components/workspace-print";
+import type { ResearchWorkspace } from "@/lib/workspace";
+import { compareResearchFields } from "@/lib/workspace";
+import type { StrategyTable } from "@/lib/strategy-tables";
+import { briefSections } from "@/lib/huu-chung-brief";
 import { matchesHuuChung } from "@/lib/huu-chung-brief";
 import {
   Project,
@@ -73,6 +78,7 @@ type ContentItem = {
   bookings: number | null;
 };
 type Detail = {
+  workspace: ResearchWorkspace;
   project: Project;
   rows: Observation[];
   imports: { name: string; rowCount: number; createdAt: string }[];
@@ -87,6 +93,20 @@ type Detail = {
   content: ContentItem[];
 };
 type Connection = { name: string; status: string; detail: string };
+const viewNames = [
+  "overview",
+  "projects",
+  "research",
+  "competitors",
+  "insight",
+  "strategy",
+  "content",
+  "plan",
+  "kpi",
+  "history",
+  "reports",
+  "settings",
+];
 const emptyProject: ProjectInput = {
   name: "",
   specialty: "",
@@ -234,6 +254,65 @@ export default function App() {
     [toast, setToast] = useState(""),
     [error, setError] = useState(""),
     [mobile, setMobile] = useState(false);
+  const [workspaceDraft, setWorkspaceDraft] =
+      useState<ResearchWorkspace | null>(null),
+    [workspaceSaving, setWorkspaceSaving] = useState(false),
+    [reportMode, setReportMode] = useState<"draft" | "saved">("draft");
+  const workspaceDirty = !!(
+    workspaceDraft &&
+    detail &&
+    JSON.stringify(workspaceDraft.tables) !==
+      JSON.stringify(detail.workspace.tables)
+  );
+  useEffect(() => {
+    const view = new URLSearchParams(window.location.search).get("view");
+    if (view && viewNames.includes(view)) setActive(viewNames.indexOf(view));
+  }, []);
+  const workspaceFromServer = useRef(detail?.workspace);
+  workspaceFromServer.current = detail?.workspace;
+  useEffect(() => {
+    setWorkspaceDraft(workspaceFromServer.current || null);
+    setReportMode("draft");
+  }, [selected, detail?.workspace?.revision]);
+  useEffect(() => {
+    if (selected && auth?.authenticated) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("project", selected);
+      url.searchParams.set("view", viewNames[active]);
+      window.history.replaceState(null, "", url.pathname + url.search);
+    }
+  }, [selected, active, auth?.authenticated]);
+  async function saveWorkspace() {
+    if (!workspaceDraft || !selected || workspaceSaving) return;
+    setWorkspaceSaving(true);
+    setError("");
+    try {
+      const saved = await api<ResearchWorkspace>(
+        `projects/${selected}/workspace`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            tables: workspaceDraft.tables,
+            expectedRevision: workspaceDraft.revision,
+          }),
+        },
+      );
+      setWorkspaceDraft(saved);
+      setDetail((current) =>
+        current ? { ...current, workspace: saved } : current,
+      );
+      setToast("Đã lưu các trường nghiên cứu. Báo cáo cũ được giữ nguyên.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không thể lưu nghiên cứu.");
+    } finally {
+      setWorkspaceSaving(false);
+    }
+  }
+  function updateWorkspaceTables(tables: StrategyTable[]) {
+    setWorkspaceDraft((current) =>
+      current ? { ...current, tables } : current,
+    );
+  }
   const [modal, setModal] = useState<
       "project" | "research" | "import" | "content" | null
     >(null),
@@ -244,7 +323,7 @@ export default function App() {
   const [days, setDays] = useState("90"),
     [start, setStart] = useState(dateAt(-89)),
     [end, setEnd] = useState(dateAt()),
-    [sources, setSources] = useState(["uploaded", "web", "meta"]),
+    [sources, setSources] = useState(["workspace", "uploaded", "web", "meta"]),
     [useAI, setUseAI] = useState(false);
   const [reportId, setReportId] = useState(""),
     [section, setSection] = useState(0),
@@ -274,7 +353,16 @@ export default function App() {
     );
     setProjects(data.projects);
     setConnections(data.connections);
-    setSelected((current) => current || data.projects[0]?.id || "");
+    const requested = new URLSearchParams(window.location.search).get(
+      "project",
+    );
+    setSelected(
+      (current) =>
+        current ||
+        (data.projects.some((p) => p.id === requested)
+          ? requested!
+          : data.projects[0]?.id || ""),
+    );
   }, []);
   const loadDetail = useCallback(async () => {
     if (!selected) return;
@@ -324,6 +412,12 @@ export default function App() {
     ),
     plan = actionPlan(p?.budget || 0);
   function openProject(edit = false) {
+    if (workspaceDirty || workspaceSaving) {
+      setError(
+        "Chị lưu hoặc bỏ thay đổi nghiên cứu trước khi đổi hồ sơ dự án nhé.",
+      );
+      return;
+    }
     setEditing(edit);
     if (edit && p) {
       const { id, createdAt, updatedAt, ...input } = p;
@@ -582,7 +676,16 @@ export default function App() {
               <select
                 aria-label="Chọn dự án"
                 value={selected}
-                onChange={(e) => setSelected(e.target.value)}
+                onChange={(e) => {
+                  if (workspaceDirty) {
+                    setError(
+                      "Lưu nghiên cứu hoặc chọn Bỏ thay đổi trước khi chuyển dự án.",
+                    );
+                    return;
+                  }
+                  setSelected(e.target.value);
+                }}
+                disabled={workspaceSaving}
               >
                 {projects.map((x) => (
                   <option key={x.id} value={x.id}>
@@ -605,7 +708,7 @@ export default function App() {
               </button>
               <button
                 className="btn primary"
-                disabled={pending || !p}
+                disabled={pending || !p || workspaceDirty || workspaceSaving}
                 onClick={() => setModal("research")}
               >
                 <RefreshCw size={16} className={pending ? "spin" : ""} />
@@ -613,24 +716,44 @@ export default function App() {
               </button>
             </div>
           </div>
-          {p && matchesHuuChung(p.facebook) && (
-            <div className="notice">
-              <Search size={20} />
+          {workspaceDraft && (
+            <div
+              className={
+                "workspace-status no-print " + (workspaceDirty ? "unsaved" : "")
+              }
+            >
               <div>
-                <b>
-                  Đã có bản nghiên cứu biên soạn riêng cho BS. Hữu Thị Chung
-                </b>
-                <p>
-                  Đối chiếu 7 nguồn công khai ngày 17/10/2026, phân tích sáu
-                  bước và 30 chủ đề chuyên khoa. Không cần AI key để đọc bản
-                  này; nguồn không được tự cập nhật.
-                </p>
-                <Link
+                <span
+                  className={"dot " + (workspaceDirty ? "amber" : "green")}
+                />
+                <span>
+                  {workspaceDirty
+                    ? "Có thay đổi nghiên cứu chưa lưu"
+                    : workspaceDraft.revision
+                      ? `Đã lưu bản làm việc ${workspaceDraft.revision} · ${dt(workspaceDraft.updatedAt!)}`
+                      : p && matchesHuuChung(p.facebook)
+                        ? "Bản nghiên cứu biên soạn · 17/10/2026"
+                        : "Không gian nghiên cứu của dự án"}
+                </span>
+                <Badge tone="gray">Dashboard 2.0</Badge>
+              </div>
+              <div>
+                {workspaceDirty && (
+                  <button
+                    className="text-link"
+                    disabled={workspaceSaving}
+                    onClick={() => setWorkspaceDraft(detail?.workspace || null)}
+                  >
+                    Bỏ thay đổi
+                  </button>
+                )}
+                <button
                   className="btn primary"
-                  href={"/research-brief?project=" + p.id}
+                  disabled={!workspaceDirty || workspaceSaving}
+                  onClick={saveWorkspace}
                 >
-                  Đọc bản nghiên cứu có nguồn <ArrowRight size={16} />
-                </Link>
+                  {workspaceSaving ? "Đang lưu…" : "Lưu nghiên cứu"}
+                </button>
               </div>
             </div>
           )}
@@ -865,6 +988,7 @@ export default function App() {
                             className="report-row"
                             onClick={() => {
                               setReportId(r.id);
+                              setReportMode("saved");
                               go(10);
                             }}
                           >
@@ -916,6 +1040,132 @@ export default function App() {
                     </section>
                   </div>
                 </>
+              )}
+              {active === 0 && workspaceDraft && (
+                <section className="card research-hub">
+                  <div className="card-heading">
+                    <div>
+                      <h2>Không gian nghiên cứu</h2>
+                      <p>
+                        Mở từng nhóm trường, hoàn thiện dữ liệu và lưu vào dự
+                        án.
+                      </p>
+                    </div>
+                    <button className="text-link" onClick={() => go(10)}>
+                      Báo cáo tổng hợp <ArrowRight size={15} />
+                    </button>
+                  </div>
+                  <div className="hub-grid">
+                    {[
+                      {
+                        title: "Hồ sơ & thương hiệu",
+                        view: 1,
+                        ids: ["profile"],
+                      },
+                      {
+                        title: "Thị trường & nguồn",
+                        view: 2,
+                        ids: ["sources"],
+                      },
+                      {
+                        title: "Đối thủ cạnh tranh",
+                        view: 3,
+                        ids: ["benchmark"],
+                      },
+                      {
+                        title: "Khách hàng & insight",
+                        view: 4,
+                        ids: ["audience", "insight"],
+                      },
+                      {
+                        title: "Chiến lược & phễu",
+                        view: 5,
+                        ids: ["funnel", "pillars"],
+                      },
+                      {
+                        title: "Lịch nội dung & kịch bản",
+                        view: 6,
+                        ids: ["calendar", "scripts", "care"],
+                      },
+                    ].map((item, i) => (
+                      <button key={item.title} onClick={() => go(item.view)}>
+                        <span className="step-number">0{i + 1}</span>
+                        <div>
+                          <b>{item.title}</b>
+                          <small>
+                            {workspaceDraft.tables
+                              .filter((t) => item.ids.includes(t.id))
+                              .reduce((n, t) => n + t.rows.length, 0)}{" "}
+                            dòng nội dung · nhấn để xem/sửa
+                          </small>
+                        </div>
+                        <ArrowUpRight size={17} />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {workspaceDraft && [1, 2, 3, 4, 5, 7].includes(active) && (
+                <ResearchWorkspacePanel
+                  tables={workspaceDraft.tables}
+                  ids={
+                    active === 1
+                      ? ["profile"]
+                      : active === 2
+                        ? ["sources"]
+                        : active === 3
+                          ? ["benchmark"]
+                          : active === 4
+                            ? ["audience", "insight"]
+                            : active === 5
+                              ? ["funnel", "pillars"]
+                              : ["calendar"]
+                  }
+                  onChange={updateWorkspaceTables}
+                  onSave={saveWorkspace}
+                  dirty={workspaceDirty}
+                  saving={workspaceSaving}
+                  title={
+                    active === 4
+                      ? "Khách hàng mục tiêu & Customer Insight"
+                      : active === 5
+                        ? "Marketing Strategy & Content Direction"
+                        : active === 2
+                          ? "Nguồn nghiên cứu thị trường"
+                          : active === 7
+                            ? "Lịch biên tập trong kế hoạch 90 ngày"
+                            : active === 3
+                              ? "Phân tích đối thủ cạnh tranh"
+                              : "Hồ sơ thương hiệu & dữ liệu nghiên cứu"
+                  }
+                />
+              )}
+              {active === 2 && p && matchesHuuChung(p.facebook) && !report && (
+                <section className="card">
+                  <div className="card-heading">
+                    <div>
+                      <h2>Phân tích nghiên cứu đã biên soạn</h2>
+                      <p>
+                        Nguồn công khai ngày 17/10/2026; chưa tự thu thập lại.
+                      </p>
+                    </div>
+                    <Badge tone="amber">Có giới hạn</Badge>
+                  </div>
+                  {briefSections.map((s, i) => (
+                    <details
+                      className="research-detail"
+                      key={s.title}
+                      open={i === 0}
+                    >
+                      <summary>
+                        0{i + 1} · {s.title}
+                      </summary>
+                      {s.findings.map((x) => (
+                        <p key={x}>{x}</p>
+                      ))}
+                    </details>
+                  ))}
+                </section>
               )}
               {active === 1 && (
                 <section className="card">
@@ -1010,8 +1260,8 @@ export default function App() {
                   </div>
                   {!report ? (
                     <Empty
-                      title="Chưa có nghiên cứu"
-                      text="Nhập dữ liệu và chọn Nghiên cứu lại. Khi nguồn bên ngoài chưa kết nối, hệ thống chỉ tạo báo cáo giới hạn có giải thích."
+                      title="Chưa có phiên bản báo cáo đã lưu"
+                      text="Các trường nghiên cứu đang hiển thị ở phía trên. Hoàn thiện và lưu, rồi chọn Nghiên cứu lại để chụp thành phiên bản báo cáo mới."
                       action={
                         <button
                           className="btn primary"
@@ -1109,8 +1359,36 @@ export default function App() {
                     >
                       Content Matrix · giả định
                     </button>
+                    {[
+                      ["direction", "Content Direction"],
+                      ["calendar", "Lịch biên tập"],
+                      ["scripts", "Kịch bản video"],
+                      ["care", "Phản hồi & CSKH"],
+                    ].map(([id, label]) => (
+                      <button
+                        key={id}
+                        className={contentTab === id ? "selected" : ""}
+                        onClick={() => setContentTab(id)}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                  {contentTab === "library" ? (
+                  {["direction", "calendar", "scripts", "care"].includes(
+                    contentTab,
+                  ) && workspaceDraft ? (
+                    <ResearchWorkspacePanel
+                      tables={workspaceDraft.tables}
+                      ids={[
+                        contentTab === "direction" ? "pillars" : contentTab,
+                      ]}
+                      onChange={updateWorkspaceTables}
+                      onSave={saveWorkspace}
+                      dirty={workspaceDirty}
+                      saving={workspaceSaving}
+                      title="Nội dung, lịch sản xuất & kịch bản"
+                    />
+                  ) : contentTab === "library" ? (
                     detail.content.length ? (
                       <div className="table-wrap">
                         <table>
@@ -1418,6 +1696,7 @@ export default function App() {
                         key={r.id}
                         onClick={() => {
                           setReportId(r.id);
+                          setReportMode("saved");
                           go(10);
                         }}
                       >
@@ -1530,8 +1809,91 @@ export default function App() {
                   )}
                 </section>
               )}
+              {active === 10 && workspaceDraft && (
+                <>
+                  <section className="card no-print">
+                    <div className="card-heading">
+                      <div>
+                        <h2>Báo cáo & Xuất file</h2>
+                        <p>
+                          Chọn bản đang làm việc hoặc phiên bản báo cáo bất
+                          biến.
+                        </p>
+                      </div>
+                      <div className="tabs">
+                        <button
+                          className={reportMode === "draft" ? "selected" : ""}
+                          onClick={() => setReportMode("draft")}
+                        >
+                          Bản đang làm việc
+                        </button>
+                        <button
+                          className={reportMode === "saved" ? "selected" : ""}
+                          onClick={() => setReportMode("saved")}
+                        >
+                          Báo cáo đã lưu ({detail.reports.length})
+                        </button>
+                      </div>
+                    </div>
+                    {reportMode === "draft" && (
+                      <div className="export-actions">
+                        <a
+                          download
+                          className="btn primary"
+                          aria-disabled={workspaceDirty}
+                          href={
+                            workspaceDirty
+                              ? undefined
+                              : `/api/projects/${selected}/workspace-export`
+                          }
+                        >
+                          Tải Excel 10 bảng
+                        </a>
+                        <button className="btn" onClick={() => window.print()}>
+                          In / Lưu PDF toàn bộ
+                        </button>
+                        <button
+                          className="btn"
+                          disabled={workspaceDirty || pending}
+                          onClick={() => setModal("research")}
+                        >
+                          Tạo phiên bản báo cáo
+                        </button>
+                      </div>
+                    )}
+                    {workspaceDirty && (
+                      <p className="error">
+                        Lưu nghiên cứu trước khi xuất Excel hoặc tạo phiên bản.
+                      </p>
+                    )}
+                  </section>
+                  {reportMode === "draft" && (
+                    <>
+                      <div className="no-print">
+                        <ResearchWorkspacePanel
+                          tables={workspaceDraft.tables}
+                          readOnly
+                          title="Xem trước bộ nghiên cứu và kế hoạch"
+                        />
+                      </div>
+                      <WorkspacePrint
+                        tables={workspaceDraft.tables}
+                        name={p?.name || ""}
+                        subtitle={
+                          workspaceDirty
+                            ? "Bản nháp có thay đổi chưa lưu"
+                            : `Bản làm việc ${workspaceDraft.revision || "biên soạn"}`
+                        }
+                      />
+                    </>
+                  )}
+                </>
+              )}
               {active === 10 && (
-                <section className="card report-print">
+                <section
+                  className="card report-print"
+                  hidden={reportMode === "draft"}
+                >
                   <div className="card-heading">
                     <div>
                       <h2>Báo cáo Marketing</h2>
@@ -1569,6 +1931,15 @@ export default function App() {
                   </div>
                   {report ? (
                     <>
+                      {report.strategyTables && (
+                        <div className="no-print">
+                          <ResearchWorkspacePanel
+                            tables={report.strategyTables}
+                            readOnly
+                            title="Các trường nghiên cứu trong phiên bản"
+                          />
+                        </div>
+                      )}
                       <div className="report-title">
                         <Badge tone="amber">PHÂN TÍCH GIỚI HẠN</Badge>
                         <h2>{report.project.name}</h2>
@@ -1595,6 +1966,13 @@ export default function App() {
                         </div>
                       )}
                       <SourceTable report={report} />
+                      {report.strategyTables && (
+                        <WorkspacePrint
+                          tables={report.strategyTables}
+                          name={report.project.name}
+                          subtitle={`Báo cáo phiên bản ${report.number} · ${report.start} → ${report.end}`}
+                        />
+                      )}
                       <h3>Chỉ số tại thời điểm lưu</h3>
                       <div className="table-wrap">
                         <table>
@@ -1715,7 +2093,7 @@ export default function App() {
           )}
           <footer className="footer">
             <span>
-              <Activity size={14} /> MedIntel · Medical Marketing Intelligence
+              <Activity size={14} /> MedIntel · Dashboard 2.0
             </span>
             <span>Phục vụ nghiên cứu Marketing · Không tư vấn điều trị</span>
           </footer>
@@ -2000,6 +2378,11 @@ export default function App() {
             <h3>Nguồn dữ liệu</h3>
             {[
               [
+                "workspace",
+                "Các trường nghiên cứu đã lưu",
+                "Bản người dùng cập nhật; chưa xác minh độc lập",
+              ],
+              [
                 "uploaded",
                 "Dữ liệu tổng hợp đã nhập",
                 "Sẵn sàng; người dùng cung cấp",
@@ -2272,6 +2655,7 @@ function SourceTable({ report }: { report: Research }) {
 }
 function Comparison({ a, b }: { a: Research; b: Research }) {
   const changes = compare(a.metrics, b.metrics);
+  const fields = compareResearchFields(a.strategyTables, b.strategyTables);
   return (
     <>
       <div className="notice">
@@ -2320,6 +2704,45 @@ function Comparison({ a, b }: { a: Research; b: Research }) {
           </tbody>
         </table>
       </div>
+      <h3 style={{ marginTop: 25 }}>Thay đổi các trường nghiên cứu</h3>
+      {!fields.comparable ? (
+        <p>Chưa có ảnh chụp bảng ở một trong hai phiên bản để đối chiếu.</p>
+      ) : (
+        <>
+          <p>
+            {fields.count} ô khác nhau. Đối chiếu theo vị trí dòng/cột; thêm
+            hoặc xóa dòng có thể làm dịch vị trí. Không suy luận thay đổi thị
+            trường từ chỉnh sửa dữ liệu.
+          </p>
+          {fields.changes.length > 0 && (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Bảng / dòng</th>
+                    <th>Trường</th>
+                    <th>Trước</th>
+                    <th>Sau</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fields.changes.map((c, i) => (
+                    <tr key={i}>
+                      <td>
+                        {c.table} · dòng {c.row}
+                      </td>
+                      <td>{c.field}</td>
+                      <td>{c.before ?? "Chưa có dữ liệu"}</td>
+                      <td>{c.after ?? "Chưa có dữ liệu"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {fields.truncated && <p>Hiển thị 100 thay đổi đầu tiên.</p>}
+            </div>
+          )}
+        </>
+      )}
       <SourceTable report={b} />
     </>
   );

@@ -3,6 +3,8 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { Project, ProjectInput, Observation, Research } from "./domain";
+import type { ResearchWorkspace } from "./workspace";
+import type { StrategyTable } from "./strategy-tables";
 const path = resolve(process.env.DATABASE_PATH || "./data/medical.sqlite");
 mkdirSync(dirname(path), { recursive: true });
 export const db = new DatabaseSync(path);
@@ -16,6 +18,7 @@ CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY,project_id TEXT NOT NULL REF
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_job ON jobs(project_id) WHERE status IN ('queued','running');
 CREATE TABLE IF NOT EXISTS imports(id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id),name TEXT NOT NULL,row_count INTEGER NOT NULL,created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS content(id TEXT PRIMARY KEY,project_id TEXT NOT NULL REFERENCES projects(id),payload TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS research_workspaces(project_id TEXT PRIMARY KEY REFERENCES projects(id),revision INTEGER NOT NULL,payload TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS audit(id TEXT PRIMARY KEY,project_id TEXT,action TEXT NOT NULL,created_at TEXT NOT NULL);`);
 const parse = <T>(row: unknown): T | null =>
   row ? JSON.parse((row as { payload: string }).payload) : null;
@@ -178,4 +181,47 @@ export function content(id: string) {
     )
     .all(id)
     .map((r) => ({ id: r.id, ...parse<Record<string, unknown>>(r) }));
+}
+
+export function getResearchWorkspace(
+  projectId: string,
+): ResearchWorkspace | null {
+  const row = db
+    .prepare(
+      "SELECT revision,payload,updated_at FROM research_workspaces WHERE project_id=?",
+    )
+    .get(projectId) as
+    { revision: number; payload: string; updated_at: string } | undefined;
+  return row
+    ? {
+        tables: JSON.parse(row.payload),
+        revision: row.revision,
+        updatedAt: row.updated_at,
+      }
+    : null;
+}
+export function saveResearchWorkspace(
+  projectId: string,
+  tables: StrategyTable[],
+  expectedRevision: number,
+): ResearchWorkspace {
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const current = getResearchWorkspace(projectId);
+    if ((current?.revision || 0) !== expectedRevision)
+      throw new Error(
+        "Dữ liệu đã được lưu từ cửa sổ khác. Tải lại dự án trước khi lưu để tránh ghi đè.",
+      );
+    const revision = expectedRevision + 1,
+      updatedAt = new Date().toISOString();
+    db.prepare(
+      "INSERT INTO research_workspaces VALUES(?,?,?,?) ON CONFLICT(project_id) DO UPDATE SET revision=excluded.revision,payload=excluded.payload,updated_at=excluded.updated_at",
+    ).run(projectId, revision, JSON.stringify(tables), updatedAt);
+    audit(projectId, "research-workspace.saved");
+    db.exec("COMMIT");
+    return { tables, revision, updatedAt };
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
 }

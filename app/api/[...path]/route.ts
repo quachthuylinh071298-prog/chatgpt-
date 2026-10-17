@@ -31,6 +31,12 @@ import {
   observationSchema,
 } from "@/lib/domain";
 import { parseUpload, allowedColumns } from "@/lib/importer";
+import {
+  initialWorkspace,
+  validateWorkspace,
+  compareResearchFields,
+} from "@/lib/workspace";
+import { getResearchWorkspace, saveResearchWorkspace } from "@/lib/db";
 import { connectionStatus } from "@/lib/connectors";
 import {
   appendStrategyTables,
@@ -45,7 +51,7 @@ const researchSchema = z
   .object({
     start: observationSchema.shape.date,
     end: observationSchema.shape.date,
-    sources: z.array(z.enum(["uploaded", "web", "meta"])).min(1),
+    sources: z.array(z.enum(["uploaded", "web", "meta", "workspace"])).min(1),
     useAI: z.boolean(),
   })
   .strict()
@@ -178,6 +184,7 @@ async function handle(req: NextRequest) {
         return response(saveProject(projectSchema.parse(await req.json()), id));
       if (parts.length === 2 && method === "GET")
         return response({
+          workspace: getResearchWorkspace(id) || initialWorkspace(p),
           project: p,
           rows: observations(id),
           imports: imports(id),
@@ -187,6 +194,29 @@ async function handle(req: NextRequest) {
           ideas: contentIdeas(p),
           plan: actionPlan(p.budget),
         });
+      if (parts[2] === "workspace" && method === "PUT") {
+        const raw = await req.text();
+        if (Buffer.byteLength(raw, "utf8") > 1500000)
+          return response({ error: "Nội dung quá lớn." }, 413);
+        const input = validateWorkspace(JSON.parse(raw), p);
+        return response(
+          saveResearchWorkspace(id, input.tables, input.expectedRevision),
+        );
+      }
+      if (parts[2] === "workspace-export" && method === "GET") {
+        const workspace = getResearchWorkspace(id) || initialWorkspace(p);
+        const book = new ExcelJS.Workbook();
+        appendStrategyTables(book, p, workspace.tables);
+        return new NextResponse(new Uint8Array(await book.xlsx.writeBuffer()), {
+          headers: {
+            "Content-Type":
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "Content-Disposition":
+              'attachment; filename="nghien-cuu-dashboard.xlsx"',
+            "Cache-Control": "no-store",
+          },
+        });
+      }
       if (parts[2] === "import" && method === "POST") {
         if (Number(req.headers.get("content-length") || 0) > 6 * 1024 * 1024)
           return response({ error: "Tệp quá lớn." }, 413);
@@ -256,6 +286,10 @@ async function handle(req: NextRequest) {
           );
         return response({
           metrics: compare(a.metrics, b.metrics),
+          researchFields: compareResearchFields(
+            a.strategyTables,
+            b.strategyTables,
+          ),
           periodsComparable: a.start === b.start && a.end === b.end,
           sourceChanges: b.sourceLogs,
           projectChanged:
@@ -352,6 +386,8 @@ async function handle(req: NextRequest) {
         },
         400,
       );
+    if (e instanceof Error && e.message.includes("cửa sổ khác"))
+      return response({ error: e.message }, 409);
     if (e instanceof SyntaxError)
       return response({ error: "JSON không hợp lệ." }, 400);
     if (e instanceof Error && /SQLITE|database|constraint/i.test(e.message))
@@ -368,3 +404,4 @@ async function handle(req: NextRequest) {
 export const GET = handle;
 export const POST = handle;
 export const PATCH = handle;
+export const PUT = handle;

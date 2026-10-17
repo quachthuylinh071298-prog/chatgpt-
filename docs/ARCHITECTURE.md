@@ -53,3 +53,9 @@ Kết quả AI luôn là giả định, không có browsing, không được nâ
 3. PostgreSQL migrations + repository abstraction, auth tổ chức, RBAC và audit actor.
 4. Worker leases, retry có kiểm soát, sandbox parser, object storage tài liệu và pipeline extraction.
 5. Tạo nội dung chuyên biệt dựa trên bằng chứng, biên tập/duyệt bác sĩ và theo dõi baseline/attribution.
+
+## Dashboard 2.0: nghiên cứu chỉnh sửa trong giao diện chính
+
+`research_workspaces` lưu 10 bảng theo project_id, revision và updated_at. API PUT kiểm tra cấu trúc, độ dài, số dòng và revision trong transaction BEGIN IMMEDIATE; xung đột trả 409. Bảng được khởi tạo theo đúng fanpage; dự án khác không nhận dữ liệu bác sĩ. Giao diện giữ bản nháp đến khi người dùng lưu, chặn đổi dự án/tạo báo cáo nếu chưa lưu.
+
+Nguồn workspace đưa bản lưu vào fingerprint và snapshot báo cáo; thay đổi sau đó không viết đè báo cáo. API xuất workspace lấy bản hiện tại đã lưu, API xuất báo cáo lấy snapshot. Bản PDF in toàn bộ bảng qua WorkspacePrint, không phụ thuộc tab hoặc phân trang giao diện. Nguồn người dùng nhập có nhãn chưa xác minh độc lập, không gửi nội dung tự do cho AI. Đường dẫn /research-brief cũ chuyển về dashboard.

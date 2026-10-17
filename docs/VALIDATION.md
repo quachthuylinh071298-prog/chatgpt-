@@ -74,3 +74,11 @@ Test xác minh bản lưu chỉ đính kèm đúng fanpage và khoảng ngày c�
 Kiểm thử kiểm tra đủ 10 bảng, số cột khớp, tổng tỷ trọng 100, lịch 30 dòng đều chưa duyệt/dự thảo, ba kịch bản video, đọc lại workbook Excel với hyperlink nguồn; API yêu cầu xác thực và từ chối xuất bộ bảng cho dự án không phù hợp.
 
 Kết quả xác minh bộ bảng: 12 unit test + 1 integration test đạt; production build kèm lint/typecheck đạt. Browser QA mở được bộ bảng có xác thực, tải Excel 10 tab và kiểm tra không tràn ngang document ở 390px; các bảng rộng cuộn trong vùng riêng. Export báo cáo dùng bảng đã chụp tại thời điểm tạo báo cáo, không tái tạo theo hồ sơ hiện tại hoặc phiên bản template mới. Hai tài liệu tham khảo được đọc qua connector trong các vùng giới hạn, chỉ dùng để rút phương pháp/cấu trúc; không chỉnh sửa file gốc và không đưa nội dung khách hàng của chúng vào repository công khai.
+
+## Dashboard 2.0 — 17/10/2026
+
+- `npm test`: 12 unit tests và một integration flow nhiều bước đều đạt. Bổ sung kiểm tra workspace riêng dự án, lưu revision, xung đột 409, lỗi cấu trúc 400, snapshot bất biến, fingerprint thay đổi, so sánh trường và Excel 10 tab.
+- `npm run build`: đạt, bao gồm kiểm tra kiểu và lint của Next. `npm run lint`: đạt.
+- Chromium desktop 1440px/mobile 390px: đăng nhập, dashboard ban đầu, sửa ô Customer Insight, lưu/tải lại, tạo báo cáo qua worker, tải Excel, in PDF, chuyển đường dẫn cũ, đóng hộp sửa bằng Escape. Không lỗi JavaScript hoặc tràn chiều ngang trang.
+- PDF đã trích xuất văn bản để kiểm tra có bảng đầu và cuối, cả kịch bản/CSKH/nguồn; dữ liệu thử dùng database tạm, không có trong ứng dụng giao cho người dùng.
+- Chưa kiểm thử AI thực tế, Web/Meta tự động hoặc môi trường Codespaces của người dùng.
